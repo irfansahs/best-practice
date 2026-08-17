@@ -1,0 +1,12 @@
+---
+description: Localization rules
+globs: backend/**/*.cs,frontend/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Localization
+
+- No hardcoded Turkish or English user-facing strings
+- Error.Code is also the localization key
+- Key format: BoundedContext.Entity.State or Layer.Rule
+- FluentValidation messages must use translator, not literal strings

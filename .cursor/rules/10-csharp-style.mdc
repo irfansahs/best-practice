@@ -1,0 +1,15 @@
+---
+description: C# compact style
+globs: backend/**/*.cs
+alwaysApply: false
+---
+
+# C# Style
+
+- File-scoped namespaces required
+- Prefer sealed classes
+- Prefer primary constructors
+- K&R brace style
+- Short methods and arrow functions may be one-liners
+- Prefer expression-bodied members when readable
+- Prefer var when type is obvious

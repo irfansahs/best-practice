@@ -1,0 +1,11 @@
+---
+description: Logging rules
+globs: backend/**/*.cs
+alwaysApply: false
+---
+
+# Logging
+
+- Use structured logging, no string interpolation in log messages
+- Never log Password, Token, CardNumber, SecretKey
+- Do not manually set SourceContext, enrichers handle it

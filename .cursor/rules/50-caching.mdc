@@ -1,0 +1,11 @@
+---
+description: Caching rules
+globs: backend/**/*.cs
+alwaysApply: false
+---
+
+# Caching
+
+- Handlers inject ICacheService, never HybridCache directly
+- Cache keys come from CacheKeys, never magic strings
+- Tag invalidation is triggered from domain event handlers, not command/query handlers

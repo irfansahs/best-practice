@@ -1,0 +1,17 @@
+---
+description: Global architecture rules
+alwaysApply: true
+---
+
+# Architecture
+
+- Dependency direction: SharedKernel <- Domain <- Application <- Infrastructure <- Api
+- Use custom CQRS dispatcher, never MediatR
+- Use Result pattern for expected failures
+- Use TypedResults in minimal API endpoints
+- Use IOptions<T> for configuration, never raw IConfiguration indexing
+- Pipeline behavior order is fixed: Logging -> Authorization -> Validation -> Caching -> Transaction -> Performance
+- Middleware order is fixed and must not be changed
+- Project names have no BestPractice prefix
+- IUnitOfWork contains only SaveChangesAsync
+- v1 has in-process domain events only, no Outbox

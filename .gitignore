@@ -1,0 +1,52 @@
+## .NET
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+project.lock.json
+project.fragment.lock.json
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+BenchmarkDotNet.Artifacts/
+
+## Secrets - asla commit edilmez
+appsettings.*.local.json
+*.pfx
+*.p12
+.env
+.env.local
+.env.*.local
+
+## Node / frontend
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.local
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
+## Editor
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+## Logs
+logs/
+*.log
+npm-debug.log*
+yarn-error.log*
+
+## Cursor - plan dosyalari repoda kalir, gecici veriler kalmaz
+.cursor/plans/*.tmp

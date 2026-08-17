@@ -1,0 +1,13 @@
+---
+description: Frontend conventions
+globs: frontend/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Frontend
+
+- Use RTK Query injectEndpoints from feature files
+- Use kebab-case file names
+- Use shadcn/ui primitives for UI
+- No hardcoded UI text, use i18n keys
+- Server data stays in RTK Query, client-only state in slices

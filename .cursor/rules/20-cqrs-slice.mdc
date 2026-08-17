@@ -1,0 +1,13 @@
+---
+description: Vertical slice and endpoint rules
+globs: backend/src/Application/**,backend/src/Api/Endpoints/**
+alwaysApply: false
+---
+
+# CQRS Slice
+
+- Each feature folder contains command/query, handler, validator, and DTO together
+- Do not create Mapping/, Dtos/, or Validators/ folders
+- Feature mapper lives at feature root, for example ProductMapper.cs
+- Endpoints must return TypedResults, never IResult
+- Every endpoint declares Produces<T> and ProducesProblem where applicable

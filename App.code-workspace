@@ -1,0 +1,73 @@
+{
+  "folders": [
+    { "name": "root", "path": "." },
+    { "name": "backend", "path": "backend" },
+    { "name": "frontend", "path": "frontend" }
+  ],
+  "settings": {
+    "editor.formatOnSave": true,
+    "editor.rulers": [160],
+    "files.eol": "\n",
+    "dotnet.defaultSolution": "backend/App.slnx",
+    "eslint.workingDirectories": ["frontend"],
+    "typescript.tsdk": "frontend/node_modules/typescript/lib",
+    "[csharp]": {
+      "editor.defaultFormatter": "ms-dotnettools.csharp",
+      "editor.tabSize": 4
+    },
+    "[typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.tabSize": 2
+    },
+    "[typescriptreact]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.tabSize": 2
+    },
+    "[json]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[jsonc]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "files.exclude": {
+      "**/bin": true,
+      "**/obj": true
+    },
+    "search.exclude": {
+      "**/bin": true,
+      "**/obj": true,
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/Migrations": true,
+      "**/package-lock.json": true
+    },
+    "tailwindCSS.experimental.classRegex": [
+      ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+      ["cn\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+    ],
+    "rest-client.environmentVariables": {
+      "local": {
+        "baseUrl": "https://localhost:7001/api/v1"
+      }
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-dotnettools.csdevkit",
+      "ms-dotnettools.csharp",
+      "esbenp.prettier-vscode",
+      "dbaeumer.vscode-eslint",
+      "bradlc.vscode-tailwindcss",
+      "humao.rest-client",
+      "editorconfig.editorconfig",
+      "ms-mssql.mssql",
+      "ms-azuretools.vscode-docker",
+      "vitest.explorer",
+      "ms-playwright.playwright",
+      "github.vscode-github-actions"
+    ]
+  }
+}

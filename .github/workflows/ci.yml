@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore backend/App.slnx
+      - name: Build
+        run: dotnet build backend/App.slnx --no-restore
+      - name: Test
+        run: dotnet test backend/App.slnx --no-build --verbosity normal
+      - name: Install EF tools
+        run: dotnet tool install --global dotnet-ef --version 10.0.11
+      - name: Migration drift
+        run: dotnet ef migrations has-pending-model-changes --project backend/src/Infrastructure --startup-project backend/src/Api
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test -- --run
+      - run: npm run build
