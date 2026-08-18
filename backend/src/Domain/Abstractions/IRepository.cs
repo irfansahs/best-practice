@@ -1,3 +1,5 @@
+using SharedKernel.Abstractions;
+
 namespace Domain.Abstractions;
 
 public interface IRepository<TAggregate> where TAggregate : class, IAggregateRoot

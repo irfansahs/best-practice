@@ -1,6 +1,7 @@
 using Domain.Abstractions;
 using Domain.Catalog.Events;
 using Domain.Catalog.ValueObjects;
+using SharedKernel.Abstractions;
 using SharedKernel.Auditing;
 using SharedKernel.Primitives;
 using SharedKernel.Results;

@@ -1,5 +1,6 @@
 using Domain.Abstractions;
 using Microsoft.EntityFrameworkCore;
+using SharedKernel.Abstractions;
 
 namespace Infrastructure.Persistence;
 

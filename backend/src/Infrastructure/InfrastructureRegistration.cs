@@ -4,8 +4,8 @@ using Application.Abstractions.Data;
 using Application.Abstractions.Events;
 using Application.Abstractions.Localization;
 using Application.Abstractions.Security;
-using Application.Abstractions.Time;
 using Application.Catalog.Abstractions;
+using Application.Configuration;
 using Infrastructure.BackgroundJobs;
 using Infrastructure.Caching;
 using Infrastructure.Configuration;
@@ -18,7 +18,6 @@ using Infrastructure.Persistence;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Seed;
 using Infrastructure.Security;
-using Infrastructure.Time;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -42,9 +41,10 @@ public static class InfrastructureRegistration
         services.AddOptionsWithValidation<DatabaseOptions>(configuration);
         services.AddOptionsWithValidation<CacheOptions>(configuration);
         services.AddOptionsWithValidation<LogOptions>(configuration);
+        services.AddOptionsWithValidation<LockoutOptions>(configuration);
 
         services.AddHttpContextAccessor();
-        services.AddScoped<IClock, SystemClock>();
+        services.AddSingleton(TimeProvider.System);
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
         services.AddScoped<ITokenService, JwtTokenService>();
@@ -62,13 +62,12 @@ public static class InfrastructureRegistration
         services.AddScoped<AuditLogInterceptor>();
         services.AddScoped<SlowQueryInterceptor>();
 
-        services.AddDbContext<AppDbContext>((sp, options) => ConfigureDbContext(sp, options));
-
+        services.AddDbContextFactory<AppDbContext>((sp, options) => ConfigureDbContext(sp, options));
+        services.AddScoped(sp => sp.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AppDbContext>());
 
         services.AddScoped<IProductRepository, ProductRepository>();
-        services.Decorate<IProductRepository, CachedProductRepository>();
 
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
@@ -114,7 +113,6 @@ public static class InfrastructureRegistration
             .AddCheck<CacheHealthCheck>("cache", tags: ["ready"]);
 
         services.AddHostedService<LogRetentionService>();
-        services.AddHostedService<CacheWarmupService>();
 
         services.AddScoped<LanguageSeeder>();
         services.AddScoped<TranslationSeeder>();

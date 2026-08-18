@@ -23,12 +23,22 @@ public static class Permissions
 
     public static class Identity
     {
-        public const string UsersRead = "identity.users.read";
+        public static class Users
+        {
+            public const string Read = "identity.users.read";
+            public const string Manage = "identity.users.manage";
+        }
     }
 
     public static class Localization
     {
         public const string Manage = "localization.translations.manage";
         public const string Read = "localization.translations.read";
+
+        public static class Translations
+        {
+            public const string Manage = "localization.translations.manage";
+            public const string Read = "localization.translations.read";
+        }
     }
 }

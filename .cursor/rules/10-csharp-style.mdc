@@ -6,10 +6,10 @@ alwaysApply: false
 
 # C# Style
 
-- File-scoped namespaces required
-- Prefer sealed classes
-- Prefer primary constructors
-- K&R brace style
-- Short methods and arrow functions may be one-liners
-- Prefer expression-bodied members when readable
-- Prefer var when type is obvious
+See [AGENTS.md](../../AGENTS.md) File Checklist.
+
+- File-scoped namespaces; prefer `sealed` and primary constructors
+- K&R braces; `var` when type is obvious
+- Short guards and returns may span 1–2 lines for readability
+- Expression-bodied members when clear
+- Do not compress entire methods into one unreadable line

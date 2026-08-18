@@ -6,6 +6,9 @@ alwaysApply: false
 
 # Logging
 
-- Use structured logging, no string interpolation in log messages
-- Never log Password, Token, CardNumber, SecretKey
-- Do not manually set SourceContext, enrichers handle it
+See [AGENTS.md](../../AGENTS.md) and docs/05-logging.md.
+
+- Structured logging only — no string interpolation in log templates
+- Never log password, token, card number, or secret key
+- Do not set `SourceContext` manually — enrichers handle it
+- TraceId: `Activity.Current` + Serilog enricher (OpenTelemetry SDK is backlog)

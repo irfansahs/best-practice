@@ -6,8 +6,11 @@ alwaysApply: false
 
 # CQRS Slice
 
-- Each feature folder contains command/query, handler, validator, and DTO together
-- Do not create Mapping/, Dtos/, or Validators/ folders
-- Feature mapper lives at feature root, for example ProductMapper.cs
-- Endpoints must return TypedResults, never IResult
-- Every endpoint declares Produces<T> and ProducesProblem where applicable
+See [AGENTS.md](../../AGENTS.md) New Feature — 7 Steps.
+
+- Command/query, handler, validator, DTO in the same feature folder
+- No `Mapping/`, `Dtos/`, or `Validators/` subfolders
+- Feature mapper at feature root (for example `ProductMapper.cs`)
+- Endpoints: `TypedResults` only — never `IResult`
+- Declare `Produces<T>` and `ProducesProblem` on every endpoint
+- Void commands: `ICommand`; with response: `ICommand<TResponse>` — not `ICommand<Unit>`

@@ -6,8 +6,10 @@ alwaysApply: false
 
 # Frontend
 
-- Use RTK Query injectEndpoints from feature files
-- Use kebab-case file names
-- Use shadcn/ui primitives for UI
-- No hardcoded UI text, use i18n keys
-- Server data stays in RTK Query, client-only state in slices
+See [AGENTS.md](../../AGENTS.md) Auth and Localization sections.
+
+- RTK Query `injectEndpoints` from feature files; kebab-case file names
+- shadcn/ui primitives; no hardcoded UI strings (i18n keys)
+- Server state in RTK Query; client-only state in slices
+- i18n: custom `shared/i18n/db-backend.ts` only — no `i18next-http-backend`
+- Auth refresh: ADR-003 body refresh — bootstrap + axios 401 mutex (details in AGENTS.md)

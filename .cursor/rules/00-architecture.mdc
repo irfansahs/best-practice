@@ -5,13 +5,14 @@ alwaysApply: true
 
 # Architecture
 
-- Dependency direction: SharedKernel <- Domain <- Application <- Infrastructure <- Api
-- Use custom CQRS dispatcher, never MediatR
-- Use Result pattern for expected failures
-- Use TypedResults in minimal API endpoints
-- Use IOptions<T> for configuration, never raw IConfiguration indexing
-- Pipeline behavior order is fixed: Logging -> Authorization -> Validation -> Caching -> Transaction -> Performance
-- Middleware order is fixed and must not be changed
-- Project names have no BestPractice prefix
-- IUnitOfWork contains only SaveChangesAsync
-- v1 has in-process domain events only, no Outbox
+Full rules: [AGENTS.md](../../AGENTS.md)
+
+Hard constraints (do not duplicate lists elsewhere):
+
+- Dependency: `SharedKernel <- Domain <- Application <- Infrastructure <- Api`
+- Custom `IDispatcher` only — no MediatR
+- `Result` for expected failures; `TypedResults` in endpoints
+- `IOptions<T>` for config — no magic config keys
+- Pipeline and middleware order are fixed in AGENTS.md — do not reorder
+- `IUnitOfWork` = `SaveChangesAsync` only; no Outbox in v1
+- Query handlers: no `ICacheService` / `HybridCache` / `DbContext`

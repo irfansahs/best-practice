@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Application.Abstractions.Security;
-using Application.Abstractions.Time;
 using Infrastructure.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -8,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Infrastructure.Persistence.Interceptors;
 
-public sealed class AuditLogInterceptor(ICurrentUser currentUser, IClock clock) : SaveChangesInterceptor
+public sealed class AuditLogInterceptor(ICurrentUser currentUser, TimeProvider timeProvider) : SaveChangesInterceptor
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = false };
 
@@ -30,7 +29,7 @@ public sealed class AuditLogInterceptor(ICurrentUser currentUser, IClock clock) 
 
         var auditLogs = context.Set<AuditLog>();
         var userId = currentUser.UserId?.ToString();
-        var timestamp = clock.UtcNow;
+        var timestamp = timeProvider.GetUtcNow();
 
         foreach (var entry in context.ChangeTracker.Entries().ToList())
         {

@@ -1,4 +1,4 @@
-using Domain.Abstractions;
+using SharedKernel.Abstractions;
 using SharedKernel.Auditing;
 using SharedKernel.Primitives;
 using SharedKernel.Results;

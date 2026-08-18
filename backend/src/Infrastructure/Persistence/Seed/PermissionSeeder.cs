@@ -1,5 +1,5 @@
+using Application.Security;
 using Domain.Identity;
-using Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Seed;

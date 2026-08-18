@@ -6,6 +6,10 @@ alwaysApply: false
 
 # Caching
 
-- Handlers inject ICacheService, never HybridCache directly
-- Cache keys come from CacheKeys, never magic strings
-- Tag invalidation is triggered from domain event handlers, not command/query handlers
+See [AGENTS.md](../../AGENTS.md) Cache section.
+
+- Command/query handlers: **never** inject `ICacheService` or `HybridCache`
+- Query cache: implement `ICachedQuery` on the query; `CachingBehavior` handles lookup
+- Keys from `CacheKeys`; tags from `CacheTags` — no magic strings
+- Invalidate via domain event handlers after commit — not from command/query handlers
+- `ICacheService` is for Infrastructure (translation cache) and test fakes only

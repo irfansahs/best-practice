@@ -1,9 +1,10 @@
 using Application.Abstractions.Data;
 using Application.Abstractions.Messaging;
 using Application.Abstractions.Security;
-using Application.Abstractions.Time;
+using Application.Configuration;
 using Domain.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using SharedKernel.Results;
 
 namespace Application.Identity.Features.Auth.Commands.Login;
@@ -12,14 +13,16 @@ public sealed class LoginCommandHandler(
     IAppDbContext db,
     IPasswordHasher passwordHasher,
     ITokenService tokenService,
-    IClock clock) : IRequestHandler<LoginCommand, LoginResponse>
+    TimeProvider timeProvider,
+    IOptions<LockoutOptions> lockoutOptions) : IRequestHandler<LoginCommand, LoginResponse>
 {
     public async Task<Result<LoginResponse>> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
         var emailResult = Domain.Identity.ValueObjects.Email.Create(request.Email);
         if (emailResult.IsFailure) return IdentityErrors.InvalidCredentials;
 
-        var now = clock.UtcNow;
+        var now = timeProvider.GetUtcNow();
+        var lockout = lockoutOptions.Value;
 
         var tracked = await db.Users
             .Include(u => u.Roles)
@@ -31,7 +34,11 @@ public sealed class LoginCommandHandler(
 
         if (!passwordHasher.Verify(request.Password, tracked.PasswordHash.Value))
         {
-            tracked.RecordFailedLogin(request.IpAddress, now);
+            tracked.RecordFailedLogin(
+                request.IpAddress,
+                now,
+                lockout.MaxFailedAttempts,
+                TimeSpan.FromMinutes(lockout.LockoutMinutes));
             db.LoginAttempts.Add(tracked.LoginAttempts.Last());
             return IdentityErrors.InvalidCredentials;
         }

@@ -2,6 +2,7 @@ using Api.Endpoints;
 using Api.Extensions;
 using Application.Abstractions.Messaging;
 using Application.Contracts;
+using Application.Identity.Features.Auth.Commands.ChangePassword;
 using Application.Identity.Features.Auth.Commands.Login;
 using Application.Identity.Features.Auth.Commands.Logout;
 using Application.Identity.Features.Auth.Commands.RefreshToken;
@@ -55,5 +56,13 @@ public sealed class AuthEndpoints : IEndpoint
             .Produces<ApiResponse<CurrentUserDto>>()
             .WithAnonymousAuthProblems()
             .WithNotFoundProblem();
+
+        group.MapPost("/change-password", async (ChangePasswordCommand cmd, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
+                await d.SendToNoContent(cmd, ctx, ct))
+            .RequireAuthorization()
+            .WithName("ChangePassword")
+            .Produces(StatusCodes.Status204NoContent)
+            .WithValidationProblem()
+            .WithAnonymousAuthProblems();
     }
 }

@@ -6,7 +6,9 @@ alwaysApply: false
 
 # Localization
 
-- No hardcoded Turkish or English user-facing strings
-- Error.Code is also the localization key
-- Key format: BoundedContext.Entity.State or Layer.Rule
-- FluentValidation messages must use translator, not literal strings
+See [AGENTS.md](../../AGENTS.md) Localization Key Convention.
+
+- No hardcoded user-facing strings in backend or frontend
+- `Error.Code` is the localization key
+- Format: `BoundedContext.Entity.State` or `Layer.Rule`
+- FluentValidation messages via `ITranslator`, not literals

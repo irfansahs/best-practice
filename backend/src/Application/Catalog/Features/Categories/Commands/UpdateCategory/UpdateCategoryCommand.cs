@@ -9,7 +9,7 @@ public sealed record UpdateCategoryCommand(
     Guid LanguageId,
     string Name,
     string? Description,
-    bool IsActive) : ICommand<Unit>, IAuthorizedRequest
+    bool IsActive) : ICommand, IAuthorizedRequest
 {
     public string Permission => Permissions.Catalog.Categories.Update;
 }

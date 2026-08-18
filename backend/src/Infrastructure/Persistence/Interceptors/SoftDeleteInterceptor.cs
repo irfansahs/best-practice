@@ -1,12 +1,11 @@
 using Application.Abstractions.Security;
-using Application.Abstractions.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using SharedKernel.Auditing;
 
 namespace Infrastructure.Persistence.Interceptors;
 
-public sealed class SoftDeleteInterceptor(ICurrentUser currentUser, IClock clock) : SaveChangesInterceptor
+public sealed class SoftDeleteInterceptor(ICurrentUser currentUser, TimeProvider timeProvider) : SaveChangesInterceptor
 {
     public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
     {
@@ -23,7 +22,7 @@ public sealed class SoftDeleteInterceptor(ICurrentUser currentUser, IClock clock
     private void Apply(DbContext? context)
     {
         if (context is null) return;
-        var now = clock.UtcNow;
+        var now = timeProvider.GetUtcNow();
         var userId = currentUser.UserId?.ToString();
 
         foreach (var entry in context.ChangeTracker.Entries<ISoftDeletable>())

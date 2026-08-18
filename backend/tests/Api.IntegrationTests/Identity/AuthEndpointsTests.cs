@@ -99,6 +99,37 @@ public sealed class AuthEndpointsTests(DatabaseFixture fixture) : IntegrationTes
         refreshResponse.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
+    [Fact]
+    public async Task ChangePassword_WithValidCurrentPassword_AllowsLoginWithNewPassword()
+    {
+        if (!IsReady) return;
+
+        const string newPassword = "NewSecurePass123!";
+        var token = await IntegrationTestAuth.LoginAsAdminAsync(Client);
+        IntegrationTestAuth.SetBearerToken(Client, token);
+
+        var changeResponse = await Client.PostAsJsonAsync("/api/v1/auth/change-password", new
+        {
+            currentPassword = "ChangeMe123!",
+            newPassword,
+        });
+        changeResponse.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        var oldLogin = await Client.PostAsJsonAsync("/api/v1/auth/login", new
+        {
+            email = "admin@local.dev",
+            password = "ChangeMe123!",
+        });
+        oldLogin.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+
+        var newLogin = await Client.PostAsJsonAsync("/api/v1/auth/login", new
+        {
+            email = "admin@local.dev",
+            password = newPassword,
+        });
+        newLogin.StatusCode.ShouldBe(HttpStatusCode.OK);
+    }
+
     private async Task<AuthData> LoginAsync()
     {
         var loginResponse = await Client.PostAsJsonAsync("/api/v1/auth/login", new

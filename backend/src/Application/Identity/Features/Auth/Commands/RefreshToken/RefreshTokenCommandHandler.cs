@@ -1,7 +1,6 @@
 using Application.Abstractions.Data;
 using Application.Abstractions.Messaging;
 using Application.Abstractions.Security;
-using Application.Abstractions.Time;
 using Domain.Identity;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel.Results;
@@ -11,13 +10,13 @@ namespace Application.Identity.Features.Auth.Commands.RefreshToken;
 public sealed class RefreshTokenCommandHandler(
     IAppDbContext db,
     ITokenService tokenService,
-    IClock clock) : IRequestHandler<RefreshTokenCommand, RefreshTokenResponse>
+    TimeProvider timeProvider) : IRequestHandler<RefreshTokenCommand, RefreshTokenResponse>
 {
     public async Task<Result<RefreshTokenResponse>> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.RefreshToken)) return IdentityErrors.RefreshTokenNotFound;
 
-        var now = clock.UtcNow;
+        var now = timeProvider.GetUtcNow();
         var refreshTokenHash = tokenService.HashRefreshToken(request.RefreshToken);
 
         var storedToken = await db.RefreshTokens

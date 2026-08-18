@@ -1,7 +1,7 @@
-using Domain.Abstractions;
 using Domain.Identity.Events;
 using Domain.Identity.ValueObjects;
 using SharedKernel.Auditing;
+using SharedKernel.Abstractions;
 using SharedKernel.Primitives;
 using SharedKernel.Results;
 
@@ -9,9 +9,6 @@ namespace Domain.Identity;
 
 public sealed class User : AggregateRoot, IAggregateRoot, IAuditableEntity, ISoftDeletable
 {
-    public const int MaxFailedLoginAttempts = 5;
-    public static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
-
     private readonly List<Role> _roles = [];
     private readonly List<RefreshToken> _refreshTokens = [];
     private readonly List<LoginAttempt> _loginAttempts = [];
@@ -88,19 +85,19 @@ public sealed class User : AggregateRoot, IAggregateRoot, IAuditableEntity, ISof
         return Result.Success();
     }
 
-    public Result RecordFailedLogin(string? ipAddress, DateTimeOffset attemptedAt)
+    public Result RecordFailedLogin(string? ipAddress, DateTimeOffset attemptedAt, int maxFailedAttempts, TimeSpan lockoutDuration)
     {
         FailedLoginAttempts++;
         _loginAttempts.Add(LoginAttempt.CreateFailure(Id, Email.Value, ipAddress, attemptedAt));
 
-        if (FailedLoginAttempts < MaxFailedLoginAttempts)
+        if (FailedLoginAttempts < maxFailedAttempts)
         {
             UpdatedAt = attemptedAt;
             return Result.Success();
         }
 
         IsLockedOut = true;
-        LockoutEnd = attemptedAt.Add(LockoutDuration);
+        LockoutEnd = attemptedAt.Add(lockoutDuration);
         UpdatedAt = attemptedAt;
         RaiseDomainEvent(new UserLockedOutEvent(Id, Email.Value, LockoutEnd.Value));
         return Result.Success();
