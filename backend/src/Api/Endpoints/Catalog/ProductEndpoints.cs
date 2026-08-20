@@ -19,7 +19,7 @@ public sealed class ProductEndpoints : IEndpoint
         var group = app.MapGroup("/api/v1/catalog/products").WithTags("Catalog");
 
         group.MapGet("/", async ([AsParameters] PageRequest page, string? search, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
-                await d.SendToApiResult(new GetProductsPagedQuery(page, search), ctx, ct))
+                await d.SendToApiResult(new GetProductsPagedQuery(page.Page, page.PageSize, search), ctx, ct))
             .WithName("GetProductsPaged")
             .Produces<ApiResponse<PagedList<ProductListItemDto>>>()
             .WithDefaultProblems()
