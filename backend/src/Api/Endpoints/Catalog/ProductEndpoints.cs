@@ -6,66 +6,37 @@ using Application.Catalog.Features.Products.Commands.UpdateProduct;
 using Application.Catalog.Features.Products.Queries.GetProductById;
 using Application.Catalog.Features.Products.Queries.GetProductsPaged;
 using Application.Contracts;
-using Application.Security;
 using Api.Extensions;
-using Microsoft.AspNetCore.Mvc;
+using ProductPerms = Application.Security.Permissions.Catalog.Products;
 
 namespace Api.Endpoints.Catalog;
 
-public sealed class ProductEndpoints : IEndpoint
-{
-    public void MapEndpoint(IEndpointRouteBuilder app)
-    {
-        var group = app.MapGroup("/api/v1/catalog/products").WithTags("Catalog");
+public sealed class ProductEndpoints : IEndpoint {
+    public void MapEndpoint(IEndpointRouteBuilder app) {
+        var g = app.MapGroup("/api/v1/catalog/products").WithTags("Catalog");
 
-        group.MapGet("/", async ([AsParameters] PageRequest page, string? search, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
-                await d.SendToApiResult(new GetProductsPagedQuery(page.Page, page.PageSize, search), ctx, ct))
-            .WithName("GetProductsPaged")
-            .Produces<ApiResponse<PagedList<ProductListItemDto>>>()
-            .WithDefaultProblems()
-            .WithValidationProblem()
-            .RequirePermission(Permissions.Catalog.Products.Read);
+        g.MapGet("/", ([AsParameters] PageRequest page, string? search, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
+                d.SendToApiResult(new GetProductsPagedQuery(page.Page, page.PageSize, search), ctx, ct))
+            .AsQuery<PagedList<ProductListItemDto>>("GetProductsPaged", ProductPerms.Read);
 
-        group.MapGet("/{id:guid}", async (Guid id, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
-                await d.SendToApiResult(new GetProductByIdQuery(id), ctx, ct))
-            .WithName("GetProductById")
-            .Produces<ApiResponse<ProductDetailDto>>()
-            .WithDefaultProblems()
-            .WithNotFoundProblem()
-            .RequirePermission(Permissions.Catalog.Products.Read);
+        g.MapGet("/{id:guid}", (Guid id, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
+                d.SendToApiResult(new GetProductByIdQuery(id), ctx, ct))
+            .AsGetById<ProductDetailDto>("GetProductById", ProductPerms.Read);
 
-        group.MapPost("/", async (CreateProductCommand cmd, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
-                await d.SendToCreated(cmd, ctx, ct, r => $"/api/v1/catalog/products/{r.Id}"))
-            .WithName("CreateProduct")
-            .Produces<ApiResponse<CreateProductResponse>>(StatusCodes.Status201Created)
-            .WithDefaultProblems()
-            .WithValidationProblem()
-            .RequirePermission(Permissions.Catalog.Products.Create);
+        g.MapPost("/", (CreateProductCommand cmd, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
+                d.SendToCreated(cmd, ctx, ct, r => $"/api/v1/catalog/products/{r.Id}"))
+            .AsCreate<CreateProductResponse>("CreateProduct", ProductPerms.Create);
 
-        group.MapPut("/{id:guid}", async (Guid id, UpdateProductCommand cmd, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
-                await d.SendToNoContent(cmd with { Id = id }, ctx, ct))
-            .WithName("UpdateProduct")
-            .Produces(StatusCodes.Status204NoContent)
-            .WithDefaultProblems()
-            .WithValidationProblem()
-            .WithNotFoundProblem()
-            .RequirePermission(Permissions.Catalog.Products.Update);
+        g.MapPut("/{id:guid}", (Guid id, UpdateProductCommand cmd, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
+                d.SendToNoContent(cmd with { Id = id }, ctx, ct))
+            .AsUpdate("UpdateProduct", ProductPerms.Update);
 
-        group.MapPut("/{id:guid}/price", async (Guid id, ChangeProductPriceCommand cmd, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
-                await d.SendToNoContent(cmd with { Id = id }, ctx, ct))
-            .WithName("ChangeProductPrice")
-            .Produces(StatusCodes.Status204NoContent)
-            .WithDefaultProblems()
-            .WithValidationProblem()
-            .WithNotFoundProblem()
-            .RequirePermission(Permissions.Catalog.Products.Update);
+        g.MapPut("/{id:guid}/price", (Guid id, ChangeProductPriceCommand cmd, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
+                d.SendToNoContent(cmd with { Id = id }, ctx, ct))
+            .AsUpdate("ChangeProductPrice", ProductPerms.Update);
 
-        group.MapDelete("/{id:guid}", async (Guid id, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
-                await d.SendToNoContent(new DeleteProductCommand(id), ctx, ct))
-            .WithName("DeleteProduct")
-            .Produces(StatusCodes.Status204NoContent)
-            .WithDefaultProblems()
-            .WithNotFoundProblem()
-            .RequirePermission(Permissions.Catalog.Products.Delete);
+        g.MapDelete("/{id:guid}", (Guid id, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
+                d.SendToNoContent(new DeleteProductCommand(id), ctx, ct))
+            .AsDelete("DeleteProduct", ProductPerms.Delete);
     }
 }

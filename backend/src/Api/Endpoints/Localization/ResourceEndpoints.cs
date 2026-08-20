@@ -12,29 +12,21 @@ public sealed class ResourceEndpoints : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/v1/localization").WithTags("Localization");
+        var g = app.MapGroup("/api/v1/localization").WithTags("Localization");
 
-        group.MapGet("/resources/{culture}", async (string culture, string? @namespace, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
-                await d.SendToApiResult(new GetResourcesQuery(culture, @namespace), ctx, ct))
+        g.MapGet("/resources/{culture}", (string culture, string? @namespace, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
+                d.SendToApiResult(new GetResourcesQuery(culture, @namespace), ctx, ct))
             .AllowAnonymous()
             .WithName("GetResources")
             .Produces<ApiResponse<ResourceBundleDto>>()
             .WithNotFoundProblem();
 
-        group.MapPut("/translations", async (UpsertTranslationCommand cmd, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
-                await d.SendToApiResult(cmd, ctx, ct))
-            .WithName("UpsertTranslation")
-            .Produces<ApiResponse<UpsertTranslationResponse>>()
-            .WithDefaultProblems()
-            .WithValidationProblem()
-            .RequirePermission(Permissions.Localization.Manage);
+        g.MapPut("/translations", (UpsertTranslationCommand cmd, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
+                d.SendToApiResult(cmd, ctx, ct))
+            .AsQuery<UpsertTranslationResponse>("UpsertTranslation", Permissions.Localization.Manage);
 
-        group.MapPost("/translations/import", async (ImportTranslationsCommand cmd, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
-                await d.SendToApiResult(cmd, ctx, ct))
-            .WithName("ImportTranslations")
-            .Produces<ApiResponse<ImportTranslationsResponse>>()
-            .WithDefaultProblems()
-            .WithValidationProblem()
-            .RequirePermission(Permissions.Localization.Manage);
+        g.MapPost("/translations/import", (ImportTranslationsCommand cmd, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
+                d.SendToApiResult(cmd, ctx, ct))
+            .AsQuery<ImportTranslationsResponse>("ImportTranslations", Permissions.Localization.Manage);
     }
 }

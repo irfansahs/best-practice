@@ -11,8 +11,8 @@ public sealed class LanguageEndpoints : IEndpoint
     {
         var group = app.MapGroup("/api/v1/localization/languages").WithTags("Localization");
 
-        group.MapGet("/", async (IDispatcher d, HttpContext ctx, CancellationToken ct) =>
-                await d.SendToApiResult(new GetLanguagesQuery(), ctx, ct))
+        group.MapGet("/", (IDispatcher d, HttpContext ctx, CancellationToken ct) =>
+                d.SendToApiResult(new GetLanguagesQuery(), ctx, ct))
             .AllowAnonymous()
             .WithName("GetLanguages")
             .Produces<ApiResponse<IReadOnlyList<LanguageDto>>>()
