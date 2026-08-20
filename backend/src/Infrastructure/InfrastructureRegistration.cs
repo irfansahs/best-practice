@@ -62,7 +62,7 @@ public static class InfrastructureRegistration
         services.AddScoped<AuditLogInterceptor>();
         services.AddScoped<SlowQueryInterceptor>();
 
-        services.AddDbContextFactory<AppDbContext>((sp, options) => ConfigureDbContext(sp, options));
+        services.AddDbContextFactory<AppDbContext>((sp, options) => ConfigureDbContext(sp, options), ServiceLifetime.Scoped);
         services.AddScoped(sp => sp.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext());
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AppDbContext>());
