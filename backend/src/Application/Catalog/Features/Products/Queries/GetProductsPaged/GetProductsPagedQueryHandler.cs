@@ -14,13 +14,19 @@ public sealed class GetProductsPagedQueryHandler(IAppDbContext db, ILanguageLook
 
         var query = db.Products.AsNoTracking().Include(p => p.Translations).AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(request.Search)) {
-            var term = request.Search.Trim().ToUpperInvariant();
-            query = query.Where(p => p.Sku.Value.Contains(term));
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var term = request.Search.Trim();
+            query = query.Where(p => EF.Property<string>(p, "Sku").Contains(term));
         }
 
         var languageId = await languages.GetCurrentLanguageIdAsync(cancellationToken);
 
-        return await query.OrderBy(p => p.Sku.Value).ToPagedListAsync(request, p => ProductMapper.ToListItemDto(p, p.Translations.SelectForLanguage(languageId)), cancellationToken);
+        return await query
+            .OrderBy(p => EF.Property<string>(p, "Sku"))
+            .ToPagedListAsync(
+                request,
+                p => ProductMapper.ToListItemDto(p, p.Translations.SelectForLanguage(languageId)),
+                cancellationToken);
     }
 }

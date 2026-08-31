@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -29,7 +30,13 @@ export function ProductsScreen() {
       setItems(result.items);
       setAuthenticated(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Request failed');
+      if (axios.isAxiosError(e)) {
+        const status = e.response?.status;
+        const msg = (e.response?.data as { message?: string } | undefined)?.message;
+        setError(msg ?? `Request failed (${status ?? 'network'})`);
+      } else {
+        setError(e instanceof Error ? e.message : 'Request failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -42,14 +49,21 @@ export function ProductsScreen() {
       await login(email.trim(), password);
       await loadProducts();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Login failed');
+      if (axios.isAxiosError(e)) {
+        const status = e.response?.status;
+        const msg = (e.response?.data as { message?: string } | undefined)?.message;
+        setError(msg ?? `Request failed (${status ?? 'network'})`);
+      } else {
+        setError(e instanceof Error ? e.message : 'Login failed');
+      }
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadProducts().catch(() => setAuthenticated(false));
-  }, [loadProducts]);
+    // Ürün listesi auth gerektirir; token yoksa login ekranında kal.
+    setAuthenticated(false);
+  }, []);
 
   if (!authenticated) {
     return (
