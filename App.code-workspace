@@ -2,14 +2,15 @@
   "folders": [
     { "name": "root", "path": "." },
     { "name": "backend", "path": "backend" },
-    { "name": "frontend", "path": "frontend" }
+    { "name": "frontend", "path": "frontend" },
+    { "name": "mobile", "path": "mobile" }
   ],
   "settings": {
     "editor.formatOnSave": true,
     "editor.rulers": [160],
     "files.eol": "\n",
     "dotnet.defaultSolution": "backend/App.slnx",
-    "eslint.workingDirectories": ["frontend"],
+    "eslint.workingDirectories": ["frontend", "mobile"],
     "typescript.tsdk": "frontend/node_modules/typescript/lib",
     "[csharp]": {
       "editor.defaultFormatter": "ms-dotnettools.csharp",
