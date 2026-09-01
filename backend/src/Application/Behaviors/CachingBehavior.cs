@@ -21,36 +21,21 @@ public sealed class CachingBehavior<TRequest, TResponse>(ICacheService cache, IC
 
         try
         {
-            var value = await cache.GetOrCreateAsync(
-                cacheKey,
-                async ct =>
-                {
-                    var result = await next();
-                    if (result.IsFailure)
-                        throw new UncacheableFailureException(result.Error);
+            var cached = await cache.GetAsync<TResponse>(cacheKey, cancellationToken);
+            if (cached is not null)
+                return Result<TResponse>.Success(cached);
 
-                    return result.Value;
-                },
-                options,
-                cachedQuery.Tags,
-                cancellationToken);
+            var result = await next();
+            if (result.IsFailure)
+                return result;
 
-            return value;
-        }
-        catch (UncacheableFailureException ex)
-        {
-            return ex.Error;
+            await cache.SetAsync(cacheKey, result.Value, options, cachedQuery.Tags, cancellationToken);
+            return result;
         }
         catch (Exception)
         {
-            // Corrupt / incompatible cache payload (e.g. old Result<T> entries) — drop and bypass.
             await cache.RemoveAsync(cacheKey, cancellationToken);
             return await next();
         }
-    }
-
-    private sealed class UncacheableFailureException(Error error) : Exception
-    {
-        public Error Error { get; } = error;
     }
 }

@@ -9,12 +9,13 @@ public sealed class TransactionBehavior<TRequest, TResponse>(IUnitOfWork unitOfW
 {
     public async Task<Result<TResponse>> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
-        if (!IsCommand(request)) return await next();
+        if (request is not ICommand && request is not ICommand<TResponse>)
+            return await next();
+
         var result = await next();
-        if (result.IsSuccess) await unitOfWork.SaveChangesAsync(cancellationToken);
+        if (result.IsSuccess)
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+
         return result;
     }
-
-    private static bool IsCommand(TRequest request) =>
-        request is ICommand || request.GetType().GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ICommand<>));
 }

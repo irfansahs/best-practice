@@ -37,7 +37,6 @@ public sealed class Product : AggregateRoot, IAggregateRoot, IAuditableEntity, I
         Price = price;
         CategoryId = categoryId;
         IsActive = true;
-        CreatedAt = DateTimeOffset.UtcNow;
     }
 
     public static Result<Product> Create(Guid id, Sku sku, Money price, Guid categoryId)
@@ -68,7 +67,6 @@ public sealed class Product : AggregateRoot, IAggregateRoot, IAuditableEntity, I
             existing.Update(trimmedName, trimmedDescription, slugResult.Value);
         }
 
-        UpdatedAt = DateTimeOffset.UtcNow;
         return Result.Success();
     }
 
@@ -77,7 +75,6 @@ public sealed class Product : AggregateRoot, IAggregateRoot, IAuditableEntity, I
         if (Price.Amount == newPrice.Amount && Price.Currency == newPrice.Currency) return CatalogErrors.PriceUnchanged;
         var oldPrice = Price;
         Price = newPrice;
-        UpdatedAt = DateTimeOffset.UtcNow;
         RaiseDomainEvent(new ProductPriceChangedEvent(Id, oldPrice.Amount, oldPrice.Currency, newPrice.Amount, newPrice.Currency));
         return Result.Success();
     }
@@ -86,7 +83,6 @@ public sealed class Product : AggregateRoot, IAggregateRoot, IAuditableEntity, I
     {
         if (categoryId == Guid.Empty) return CatalogErrors.CategoryIdRequired;
         CategoryId = categoryId;
-        UpdatedAt = DateTimeOffset.UtcNow;
         return Result.Success();
     }
 
@@ -94,7 +90,6 @@ public sealed class Product : AggregateRoot, IAggregateRoot, IAuditableEntity, I
     {
         if (IsActive) return Result.Success();
         IsActive = true;
-        UpdatedAt = DateTimeOffset.UtcNow;
         return Result.Success();
     }
 
@@ -102,7 +97,6 @@ public sealed class Product : AggregateRoot, IAggregateRoot, IAuditableEntity, I
     {
         if (!IsActive) return Result.Success();
         IsActive = false;
-        UpdatedAt = DateTimeOffset.UtcNow;
         return Result.Success();
     }
 
@@ -112,6 +106,5 @@ public sealed class Product : AggregateRoot, IAggregateRoot, IAuditableEntity, I
         DeletedAt = deletedAt;
         DeletedBy = deletedBy;
         IsActive = false;
-        UpdatedAt = deletedAt;
     }
 }

@@ -19,8 +19,12 @@ public sealed class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidat
 
         if (failures.Count == 0) return await next();
 
+        var errors = failures
+            .GroupBy(f => string.IsNullOrWhiteSpace(f.PropertyName) ? string.Empty : f.PropertyName)
+            .ToDictionary(g => g.Key, g => g.Select(f => f.ErrorMessage).Distinct().ToArray());
+
         var first = failures[0];
         var code = string.IsNullOrWhiteSpace(first.ErrorCode) ? "Validation.Failed" : first.ErrorCode;
-        return Error.Validation(code, first.ErrorMessage);
+        return Error.Validation(code, first.ErrorMessage, errors);
     }
 }

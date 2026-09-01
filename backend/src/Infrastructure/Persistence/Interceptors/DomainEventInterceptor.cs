@@ -9,6 +9,7 @@ namespace Infrastructure.Persistence.Interceptors;
 public sealed class DomainEventInterceptor(IDomainEventDispatcher dispatcher) : SaveChangesInterceptor
 {
     private List<IDomainEvent>? _pendingEvents;
+    private List<Entity>? _entitiesWithEvents;
 
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
@@ -16,7 +17,7 @@ public sealed class DomainEventInterceptor(IDomainEventDispatcher dispatcher) : 
         CancellationToken cancellationToken = default)
     {
         if (eventData.Context is not null)
-            _pendingEvents = CollectDomainEvents(eventData.Context);
+            SnapshotDomainEvents(eventData.Context);
 
         return base.SavingChangesAsync(eventData, result, cancellationToken);
     }
@@ -27,22 +28,36 @@ public sealed class DomainEventInterceptor(IDomainEventDispatcher dispatcher) : 
         CancellationToken cancellationToken = default)
     {
         if (result > 0 && _pendingEvents is { Count: > 0 })
+        {
             await dispatcher.DispatchAsync(_pendingEvents, cancellationToken);
+            ClearCollectedDomainEvents();
+        }
 
         _pendingEvents = null;
+        _entitiesWithEvents = null;
         return await base.SavedChangesAsync(eventData, result, cancellationToken);
     }
 
-    private static List<IDomainEvent> CollectDomainEvents(DbContext context)
+    private void SnapshotDomainEvents(DbContext context)
     {
-        var events = new List<IDomainEvent>();
+        _pendingEvents = [];
+        _entitiesWithEvents = [];
 
         foreach (var entry in context.ChangeTracker.Entries<Entity>())
         {
-            events.AddRange(entry.Entity.GetDomainEvents());
-            entry.Entity.ClearDomainEvents();
-        }
+            var events = entry.Entity.GetDomainEvents();
+            if (events.Count == 0) continue;
 
-        return events;
+            _entitiesWithEvents.Add(entry.Entity);
+            _pendingEvents.AddRange(events);
+        }
+    }
+
+    private void ClearCollectedDomainEvents()
+    {
+        if (_entitiesWithEvents is null) return;
+
+        foreach (var entity in _entitiesWithEvents)
+            entity.ClearDomainEvents();
     }
 }

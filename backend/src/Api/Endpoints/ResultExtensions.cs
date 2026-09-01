@@ -36,6 +36,14 @@ public static class ResultExtensions
     private static ProblemDetailsFactory CreateProblemDetails(Error error, HttpContext? httpContext)
     {
         var details = error.ToProblemDetails();
+        var extensions = new Dictionary<string, object?>
+        {
+            ["code"] = error.Code,
+            ["traceId"] = Activity.Current?.Id ?? httpContext?.TraceIdentifier
+        };
+
+        if (error.ValidationErrors is not null)
+            extensions["errors"] = error.ValidationErrors;
 
         return new ProblemDetailsFactory
         {
@@ -43,11 +51,7 @@ public static class ResultExtensions
             Title = details.Title,
             Detail = details.Detail,
             Type = details.Type,
-            Extensions =
-            {
-                ["code"] = error.Code,
-                ["traceId"] = Activity.Current?.Id ?? httpContext?.TraceIdentifier
-            }
+            Extensions = extensions
         };
     }
 

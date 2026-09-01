@@ -1,9 +1,20 @@
+import { useState } from 'react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/shared/components/ui/alert-dialog';
 import { Permissions } from '@/shared/api/api-types';
 import { PermissionGate } from '@/app/routes/permission-gate';
 import {
@@ -16,14 +27,16 @@ export function CategoriesListPage() {
   const { t } = useTranslation();
   const { data, isLoading, isError, refetch } = useGetCategoriesQuery();
   const [deleteCategory] = useDeleteCategoryMutation();
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
 
   const categories = data?.data ?? [];
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(t('Categories.Delete.Confirm', { name }))) return;
+  const handleDelete = async () => {
+    if (!pendingDelete) return;
     try {
-      await deleteCategory(id).unwrap();
+      await deleteCategory(pendingDelete.id).unwrap();
       toast.success(t('Categories.Delete.Success'));
+      setPendingDelete(null);
     } catch (error) {
       showApiError(error, t);
     }
@@ -88,7 +101,7 @@ export function CategoriesListPage() {
                             <Button
                               variant="destructive"
                               size="sm"
-                              onClick={() => void handleDelete(category.id, category.name)}
+                              onClick={() => setPendingDelete({ id: category.id, name: category.name })}
                             >
                               {t('Common.Delete')}
                             </Button>
@@ -103,6 +116,21 @@ export function CategoriesListPage() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => !open && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('Categories.Delete.Confirm', { name: pendingDelete?.name ?? '' })}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('Categories.Delete.Confirm', { name: pendingDelete?.name ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('Common.Cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void handleDelete()}>{t('Common.Delete')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

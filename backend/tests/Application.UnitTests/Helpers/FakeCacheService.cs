@@ -8,6 +8,25 @@ public sealed class FakeCacheService : ICacheService
 
     public IReadOnlyDictionary<string, object?> Entries => _entries;
 
+    public ValueTask<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default)
+    {
+        if (_entries.TryGetValue(key, out var cached) && cached is T typed)
+            return ValueTask.FromResult<T?>(typed);
+
+        return ValueTask.FromResult<T?>(default);
+    }
+
+    public ValueTask SetAsync<T>(
+        string key,
+        T value,
+        CacheEntryOptions? options = null,
+        string[]? tags = null,
+        CancellationToken cancellationToken = default)
+    {
+        _entries[key] = value;
+        return ValueTask.CompletedTask;
+    }
+
     public ValueTask<T> GetOrCreateAsync<T>(
         string key,
         Func<CancellationToken, ValueTask<T>> factory,

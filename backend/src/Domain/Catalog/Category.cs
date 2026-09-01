@@ -32,7 +32,6 @@ public sealed class Category : AggregateRoot, IAggregateRoot, IAuditableEntity, 
     {
         ParentCategoryId = parentCategoryId;
         IsActive = true;
-        CreatedAt = DateTimeOffset.UtcNow;
     }
 
     public static Result<Category> Create(Guid id, Guid? parentCategoryId = null)
@@ -61,7 +60,6 @@ public sealed class Category : AggregateRoot, IAggregateRoot, IAuditableEntity, 
             existing.Update(trimmedName, trimmedDescription, slugResult.Value);
         }
 
-        UpdatedAt = DateTimeOffset.UtcNow;
         return Result.Success();
     }
 
@@ -69,7 +67,6 @@ public sealed class Category : AggregateRoot, IAggregateRoot, IAuditableEntity, 
     {
         if (parentCategoryId == Id) return CatalogErrors.CategoryParentInvalid;
         ParentCategoryId = parentCategoryId;
-        UpdatedAt = DateTimeOffset.UtcNow;
         return Result.Success();
     }
 
@@ -77,7 +74,6 @@ public sealed class Category : AggregateRoot, IAggregateRoot, IAuditableEntity, 
     {
         if (IsActive) return Result.Success();
         IsActive = true;
-        UpdatedAt = DateTimeOffset.UtcNow;
         return Result.Success();
     }
 
@@ -85,7 +81,6 @@ public sealed class Category : AggregateRoot, IAggregateRoot, IAuditableEntity, 
     {
         if (!IsActive) return Result.Success();
         IsActive = false;
-        UpdatedAt = DateTimeOffset.UtcNow;
         return Result.Success();
     }
 
@@ -95,6 +90,5 @@ public sealed class Category : AggregateRoot, IAggregateRoot, IAuditableEntity, 
         DeletedAt = deletedAt;
         DeletedBy = deletedBy;
         IsActive = false;
-        UpdatedAt = deletedAt;
     }
 }

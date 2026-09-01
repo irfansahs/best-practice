@@ -2,6 +2,15 @@ namespace Application.Abstractions.Caching;
 
 public interface ICacheService
 {
+    ValueTask<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default);
+
+    ValueTask SetAsync<T>(
+        string key,
+        T value,
+        CacheEntryOptions? options = null,
+        string[]? tags = null,
+        CancellationToken cancellationToken = default);
+
     ValueTask<T> GetOrCreateAsync<T>(
         string key,
         Func<CancellationToken, ValueTask<T>> factory,

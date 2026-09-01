@@ -5,22 +5,19 @@ import {
   FlatList,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { getProducts, login } from '../api/client';
+import { getProducts, logout } from '../api/client';
 
-const DEFAULT_EMAIL = 'admin@local.dev';
-const DEFAULT_PASSWORD = 'ChangeMe123!';
+interface ProductsScreenProps {
+  onLogout: () => void;
+}
 
-export function ProductsScreen() {
-  const [email, setEmail] = useState(DEFAULT_EMAIL);
-  const [password, setPassword] = useState(DEFAULT_PASSWORD);
+export function ProductsScreen({ onLogout }: ProductsScreenProps) {
   const [items, setItems] = useState<Awaited<ReturnType<typeof getProducts>>['items']>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [authenticated, setAuthenticated] = useState(false);
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -28,7 +25,6 @@ export function ProductsScreen() {
     try {
       const result = await getProducts();
       setItems(result.items);
-      setAuthenticated(true);
     } catch (e) {
       if (axios.isAxiosError(e)) {
         const status = e.response?.status;
@@ -42,52 +38,23 @@ export function ProductsScreen() {
     }
   }, []);
 
-  const handleLogin = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await login(email.trim(), password);
-      await loadProducts();
-    } catch (e) {
-      if (axios.isAxiosError(e)) {
-        const status = e.response?.status;
-        const msg = (e.response?.data as { message?: string } | undefined)?.message;
-        setError(msg ?? `Request failed (${status ?? 'network'})`);
-      } else {
-        setError(e instanceof Error ? e.message : 'Login failed');
-      }
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    // Ürün listesi auth gerektirir; token yoksa login ekranında kal.
-    setAuthenticated(false);
-  }, []);
+    void loadProducts();
+  }, [loadProducts]);
 
-  if (!authenticated) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Login</Text>
-        <TextInput style={styles.input} value={email} onChangeText={setEmail} autoCapitalize="none" placeholder="Email" />
-        <TextInput
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          placeholder="Password"
-        />
-        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-          <Text style={styles.buttonText}>{loading ? 'Loading...' : 'Sign in'}</Text>
-        </TouchableOpacity>
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-      </View>
-    );
-  }
+  const handleLogout = async () => {
+    await logout();
+    onLogout();
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Products</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Products</Text>
+        <TouchableOpacity onPress={() => void handleLogout()}>
+          <Text style={styles.logout}>Logout</Text>
+        </TouchableOpacity>
+      </View>
       {loading ? <ActivityIndicator size="large" /> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <FlatList
@@ -102,7 +69,7 @@ export function ProductsScreen() {
         )}
         ListEmptyComponent={!loading ? <Text>No products</Text> : null}
       />
-      <TouchableOpacity style={styles.button} onPress={loadProducts} disabled={loading}>
+      <TouchableOpacity style={styles.button} onPress={() => void loadProducts()} disabled={loading}>
         <Text style={styles.buttonText}>Refresh</Text>
       </TouchableOpacity>
     </View>
@@ -111,14 +78,9 @@ export function ProductsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  title: { fontSize: 22, fontWeight: '600', marginBottom: 12 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-  },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  title: { fontSize: 22, fontWeight: '600' },
+  logout: { color: '#2563eb', fontWeight: '600' },
   button: {
     backgroundColor: '#2563eb',
     padding: 12,

@@ -33,7 +33,8 @@ public static class ResultExtensions
         error.Type.ToStatusCode(),
         error.Type.ToTitle(),
         error.Message,
-        $"https://httpstatuses.com/{error.Type.ToStatusCode()}");
+        $"https://httpstatuses.com/{error.Type.ToStatusCode()}",
+        error.ValidationErrors);
 
     private static int ToStatusCode(this ErrorType type) => type switch
     {
