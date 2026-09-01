@@ -153,6 +153,8 @@ Commands: `ICommand` (void/delete) or `ICommand<TResponse>` (with response). Que
 
 ```bash
 docker compose up -d
+docker compose --profile dev up -d --build
+docker compose --profile full up -d --build
 dotnet build backend/App.slnx
 dotnet test backend/App.slnx
 dotnet ef migrations add <Name> --project backend/src/Infrastructure --startup-project backend/src/Api

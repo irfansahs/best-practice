@@ -1,19 +1,24 @@
+name: best-practice
+
 # Profiles:
-#   (none)  -> SQL Server only
-#   hybrid  -> SQL + Vite UI (run API locally on :5202 for debugging)
-#   full    -> SQL + API + production UI build
+#   (none)  -> SQL Server only (IDE debugging: run API/frontend locally)
+#   dev     -> SQL + API (dotnet watch) + Vite HMR + Expo Web
+#   full    -> SQL + compiled API + Nginx frontend
 #
-# Hybrid (UI in Docker, API local):
-#   docker compose --profile hybrid up -d --build
-#   dotnet run --project backend/src/Api --launch-profile http
+# Full dev stack (hot reload):
+#   docker compose --profile dev up -d --build
 #
-# Full stack:
+# Production-like preview:
 #   docker compose --profile full up -d --build
+#
+# SQL only + local API debug:
+#   docker compose up -d
+#   dotnet run --project backend/src/Api --launch-profile http
 
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2025-latest
-    container_name: app-sqlserver
+    container_name: bp-sqlserver
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "YourStrong!Passw0rd"
@@ -29,12 +34,79 @@ services:
       retries: 10
       start_period: 30s
 
+  api-dev:
+    profiles: [dev]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: bp-api-dev
+    ports:
+      - "5202:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+      Database__ConnectionString: >-
+        Server=sqlserver,1433;Database=BestPractice;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;MultipleActiveResultSets=true;Connect Timeout=15
+      Cors__AllowedOrigins__0: http://localhost:5173
+      Cors__AllowedOrigins__1: http://localhost:8081
+    volumes:
+      - ./backend/src:/src/src
+      - api-dev-bin:/src/src/Api/bin
+      - api-dev-obj:/src/src/Api/obj
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  frontend-dev:
+    profiles: [dev]
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: bp-frontend-dev
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: /api/v1
+      VITE_PROXY_TARGET: http://api-dev:8080
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+    depends_on:
+      api-dev:
+        condition: service_healthy
+
+  mobile-dev:
+    profiles: [dev]
+    build:
+      context: ./mobile
+      dockerfile: Dockerfile.dev
+    container_name: bp-mobile-dev
+    ports:
+      - "8081:8081"
+    environment:
+      EXPO_PUBLIC_API_URL: http://localhost:5202/api/v1
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./mobile:/app
+      - mobile-node-modules:/app/node_modules
+    depends_on:
+      api-dev:
+        condition: service_healthy
+
   api:
     profiles: [full]
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: app-api
+    container_name: bp-api
     ports:
       - "5202:8080"
     environment:
@@ -43,8 +115,8 @@ services:
       Database__ConnectionString: >-
         Server=sqlserver,1433;Database=BestPractice;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;MultipleActiveResultSets=true;Connect Timeout=15
       Cors__AllowedOrigins__0: http://localhost:5173
-      # Bearer auth: CORS origins for tooling / non-proxied UI; nginx same-origin preferred
       Cors__AllowedOrigins__1: http://127.0.0.1:5173
+      Cors__AllowedOrigins__2: http://localhost:8081
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -61,36 +133,17 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        # Same origin via nginx /api proxy (see nginx.conf)
         VITE_API_URL: /api/v1
-    container_name: app-frontend
+    container_name: bp-frontend
     ports:
       - "5173:5173"
     depends_on:
       api:
         condition: service_healthy
 
-  frontend-dev:
-    profiles: [hybrid]
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    container_name: app-frontend-dev
-    ports:
-      - "5173:5173"
-    environment:
-      VITE_API_URL: /api/v1
-      VITE_PROXY_TARGET: http://host.docker.internal:5202
-      CHOKIDAR_USEPOLLING: "true"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - ./frontend:/app
-      - frontend-node-modules:/app/node_modules
-    depends_on:
-      sqlserver:
-        condition: service_healthy
-
 volumes:
   sqlserver-data:
   frontend-node-modules:
+  mobile-node-modules:
+  api-dev-bin:
+  api-dev-obj:

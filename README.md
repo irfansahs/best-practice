@@ -1,52 +1,56 @@
 # Best Practice Project
 
-Modular monolith with .NET 10 backend (DDD/CQRS) and React frontend.
+Modular monolith with .NET 10 backend (DDD/CQRS), React frontend, and Expo mobile.
 
 ## Prerequisites
 
-- .NET 10 SDK
-- Node.js 22+
-- Docker Desktop (SQL Server)
+- Docker Desktop (recommended for full stack)
+- Or: .NET 10 SDK + Node.js 22+ for local IDE debugging
 - Cursor/VS Code — open **`App.code-workspace`**, not a single folder
 
 ## Quick Start
 
-### Hybrid (recommended for API debugging)
+### Full dev stack in Docker (hot reload)
 
-UI runs in Docker; API runs locally so you can attach a debugger.
+SQL Server, API (`dotnet watch`), Vite HMR, and Expo Web in one command:
 
 ```bash
-docker compose --profile hybrid up -d --build
-dotnet run --project backend/src/Api --launch-profile http
+docker compose --profile dev up -d --build
 ```
 
-Open `http://localhost:5173` — the browser calls the local API at `http://localhost:5202`.
+| Service     | URL |
+|-------------|-----|
+| API         | `http://localhost:5202` |
+| Frontend    | `http://localhost:5173` |
+| Mobile Web  | `http://localhost:8081` |
+| SQL Server  | `127.0.0.1,14333` |
+| Scalar      | `http://localhost:5202/scalar/v1` (Development) |
 
-### Full stack in Docker
+Default admin (seeded): `admin@local.dev` / `ChangeMe123!`
+
+**Note:** `mobile-dev` is Expo **Web** in the browser. Android emulator / Expo Go still use local Metro: `cd mobile && npx expo start --android` (API at `http://10.0.2.2:5202/api/v1`).
+
+### IDE API debugging (SQL in Docker, API local)
+
+```bash
+docker compose up -d
+dotnet run --project backend/src/Api --launch-profile http
+cd frontend && npm install && npm run dev   # optional
+```
+
+### Production-like preview in Docker
 
 ```bash
 docker compose --profile full up -d --build
 ```
 
-### SQL Server only + local dev
+Compiled API + Nginx frontend (same ports: 5202, 5173).
+
+### SQL Server only
 
 ```bash
 docker compose up -d
-dotnet run --project backend/src/Api --launch-profile http
-cd frontend && npm install && npm run dev
 ```
-
-| Service    | URL |
-|------------|-----|
-| API        | `http://localhost:5202` |
-| Frontend   | `http://localhost:5173` |
-| SQL Server | `127.0.0.1,14333` |
-| Scalar     | `http://localhost:5202/scalar/v1` (Development) |
-
-Default admin (seeded):
-
-- Email: `admin@local.dev`
-- Password: `ChangeMe123!`
 
 ## Solution Layout
 
@@ -54,6 +58,7 @@ Default admin (seeded):
 backend/src/SharedKernel, Domain, Application, Infrastructure, Api
 backend/tests/Domain.UnitTests, Application.UnitTests, Api.IntegrationTests, ArchitectureTests
 frontend/
+mobile/
 ```
 
 ## Commands

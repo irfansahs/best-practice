@@ -1,0 +1,23 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0
+WORKDIR /src
+
+COPY Directory.Build.props Directory.Packages.props App.slnx ./
+COPY src/SharedKernel/SharedKernel.csproj src/SharedKernel/
+COPY src/Domain/Domain.csproj src/Domain/
+COPY src/Application/Application.csproj src/Application/
+COPY src/Infrastructure/Infrastructure.csproj src/Infrastructure/
+COPY src/Api/Api.csproj src/Api/
+RUN dotnet restore src/Api/Api.csproj
+
+COPY src/ src/
+
+WORKDIR /src/src/Api
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+EXPOSE 8080
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+ENV ASPNETCORE_URLS=http://+:8080
+
+CMD ["dotnet", "watch", "run", "--no-launch-profile", "--urls", "http://0.0.0.0:8080"]
