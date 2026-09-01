@@ -1,13 +1,15 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL } from '@/config';
+import { getCulture } from '@/services/culture-store';
 import {
   clearTokens,
   getAccessToken,
   getRefreshToken,
   setAccessToken,
   setRefreshToken,
-} from '../auth/token-storage';
-import type { ApiResponse, LoginResponse, PagedList, ProductListItem } from './types';
+} from '@/services/token-store';
+import { getProblemMessage, isProblemDetails } from '@/api/problem-details';
+import type { ApiResponse, LoginResponse } from '@/api/types';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -24,6 +26,7 @@ export function setSessionExpiredHandler(handler: (() => void) | null) {
 apiClient.interceptors.request.use((config) => {
   const token = getAccessToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  config.headers['X-Culture'] = getCulture();
   return config;
 });
 
@@ -93,28 +96,12 @@ export async function bootstrapSession() {
   return token !== null;
 }
 
-export async function login(email: string, password: string) {
-  const { data } = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', { email, password });
-  setAccessToken(data.data.accessToken);
-  await setRefreshToken(data.data.refreshToken);
-  return data.data;
-}
-
-export async function logout() {
-  const refresh = await getRefreshToken();
-  if (refresh) {
-    try {
-      await apiClient.post('/auth/logout', { refreshToken: refresh });
-    } catch {
-      // ignore logout errors
-    }
+export function getApiErrorMessage(error: unknown, fallback = 'Request failed'): string {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data;
+    if (isProblemDetails(data)) return getProblemMessage(data, fallback);
+    const status = error.response?.status;
+    return status ? `Request failed (${status})` : fallback;
   }
-  await clearTokens();
-}
-
-export async function getProducts(page = 1, pageSize = 20) {
-  const { data } = await apiClient.get<ApiResponse<PagedList<ProductListItem>>>('/catalog/products', {
-    params: { page, pageSize },
-  });
-  return data.data;
+  return error instanceof Error ? error.message : fallback;
 }

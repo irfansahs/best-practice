@@ -19,6 +19,13 @@ export interface LoginResponse {
   expiresAt: string;
 }
 
+export interface CurrentUserDto {
+  id: string;
+  email: string;
+  fullName: string;
+  permissions: string[];
+}
+
 export interface ProductListItem {
   id: string;
   sku: string;
@@ -26,4 +33,24 @@ export interface ProductListItem {
   currency: string;
   isActive: boolean;
   name: string;
+}
+
+export interface ProductDetailDto {
+  id: string;
+  sku: string;
+  price: number;
+  currency: string;
+  categoryId: string;
+  languageId: string;
+  isActive: boolean;
+  name: string;
+  description: string | null;
+  slug: string;
+}
+
+export interface CategoryListItem {
+  id: string;
+  name: string;
+  isActive: boolean;
+  parentCategoryId: string | null;
 }

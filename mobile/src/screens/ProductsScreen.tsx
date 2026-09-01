@@ -1,99 +1,158 @@
-import axios from 'axios';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
+  Pressable,
+  RefreshControl,
   View,
 } from 'react-native';
-import { getProducts, logout } from '../api/client';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { getApiErrorMessage } from '@/api/client';
+import { getProducts } from '@/api/products-api';
+import type { ProductListItem } from '@/api/types';
+import type { AppStackParamList } from '@/navigation/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { StatusBadge } from '@/components/ui/badge';
+import { Text } from '@/components/ui/text';
 
-interface ProductsScreenProps {
-  onLogout: () => void;
-}
+const PAGE_SIZE = 20;
 
-export function ProductsScreen({ onLogout }: ProductsScreenProps) {
-  const [items, setItems] = useState<Awaited<ReturnType<typeof getProducts>>['items']>([]);
+export function ProductsScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList, 'ProductsList'>>();
+  const { logout } = useAuth();
+  const [items, setItems] = useState<ProductListItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasNext, setHasNext] = useState(false);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const loadProducts = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await getProducts();
-      setItems(result.items);
-    } catch (e) {
-      if (axios.isAxiosError(e)) {
-        const status = e.response?.status;
-        const msg = (e.response?.data as { message?: string } | undefined)?.message;
-        setError(msg ?? `Request failed (${status ?? 'network'})`);
-      } else {
-        setError(e instanceof Error ? e.message : 'Request failed');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const loadingMoreRef = useRef(false);
 
   useEffect(() => {
-    void loadProducts();
-  }, [loadProducts]);
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
-  const handleLogout = async () => {
-    await logout();
-    onLogout();
+  const loadPage = useCallback(
+    async (pageToLoad: number, searchTerm: string, append: boolean) => {
+      if (append) {
+        setLoadingMore(true);
+        loadingMoreRef.current = true;
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      try {
+        const result = await getProducts({ page: pageToLoad, pageSize: PAGE_SIZE, search: searchTerm });
+        setItems((prev) => (append ? [...prev, ...result.items] : result.items));
+        setPage(result.page);
+        setHasNext(result.hasNext);
+      } catch (e) {
+        setError(getApiErrorMessage(e));
+        if (!append) setItems([]);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+        loadingMoreRef.current = false;
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    void loadPage(1, debouncedSearch, false);
+  }, [debouncedSearch, loadPage]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    void loadPage(1, debouncedSearch, false);
+  };
+
+  const onEndReached = () => {
+    if (!hasNext || loadingMoreRef.current || loading) return;
+    void loadPage(page + 1, debouncedSearch, true);
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Products</Text>
-        <TouchableOpacity onPress={() => void handleLogout()}>
-          <Text style={styles.logout}>Logout</Text>
-        </TouchableOpacity>
+    <View className="flex-1 bg-background">
+      <View className="flex-row items-center justify-between px-4 py-3 border-b border-border">
+        <Text variant="h2">Products</Text>
+        <View className="flex-row gap-2">
+          <Button variant="ghost" size="sm" onPress={() => navigation.navigate('CategoriesList')}>
+            Categories
+          </Button>
+          <Button variant="ghost" size="sm" onPress={() => void logout()}>
+            Logout
+          </Button>
+        </View>
       </View>
-      {loading ? <ActivityIndicator size="large" /> : null}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      <View className="px-4 py-3">
+        <Input
+          placeholder="Search products..."
+          value={search}
+          onChangeText={setSearch}
+          autoCapitalize="none"
+        />
+      </View>
+
+      {loading && items.length === 0 ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#5b5bd6" />
+        </View>
+      ) : null}
+
+      {error ? (
+        <View className="px-4">
+          <Text variant="error">{error}</Text>
+        </View>
+      ) : null}
+
       <FlatList
         data={items}
         keyExtractor={(item) => item.id}
+        contentContainerClassName="px-4 pb-4 gap-3"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={0.4}
+        ListEmptyComponent={
+          !loading ? (
+            <Text variant="muted" className="text-center py-8">No products found</Text>
+          ) : null
+        }
+        ListFooterComponent={
+          loadingMore ? (
+            <View className="py-4">
+              <ActivityIndicator color="#5b5bd6" />
+            </View>
+          ) : null
+        }
         renderItem={({ item }) => (
-          <View style={styles.row}>
-            <Text style={styles.sku}>{item.sku}</Text>
-            <Text>{item.name}</Text>
-            <Text>{item.price} {item.currency}</Text>
-          </View>
+          <Pressable onPress={() => navigation.navigate('ProductDetail', { id: item.id })}>
+            <Card>
+              <CardContent className="gap-2 pt-4">
+                <View className="flex-row items-center justify-between">
+                  <Text className="font-mono font-semibold">{item.sku}</Text>
+                  <StatusBadge active={item.isActive} />
+                </View>
+                <Text variant="h3">{item.name}</Text>
+                <Text variant="muted">
+                  {item.price.toFixed(2)} {item.currency}
+                </Text>
+              </CardContent>
+            </Card>
+          </Pressable>
         )}
-        ListEmptyComponent={!loading ? <Text>No products</Text> : null}
       />
-      <TouchableOpacity style={styles.button} onPress={() => void loadProducts()} disabled={loading}>
-        <Text style={styles.buttonText}>Refresh</Text>
-      </TouchableOpacity>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  title: { fontSize: 22, fontWeight: '600' },
-  logout: { color: '#2563eb', fontWeight: '600' },
-  button: {
-    backgroundColor: '#2563eb',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonText: { color: '#fff', fontWeight: '600' },
-  error: { color: '#dc2626', marginTop: 8 },
-  row: {
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  sku: { fontWeight: '600' },
-});

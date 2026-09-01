@@ -1,38 +1,52 @@
-import axios from 'axios';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   View,
 } from 'react-native';
-import { login } from '../api/client';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getApiErrorMessage } from '@/api/client';
+import { isProblemDetails, getValidationErrors } from '@/api/problem-details';
+import axios from 'axios';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Text } from '@/components/ui/text';
 
-interface LoginScreenProps {
-  onSuccess: () => void;
-}
-
-export function LoginScreen({ onSuccess }: LoginScreenProps) {
+export function LoginScreen() {
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
   const handleLogin = async () => {
-    setLoading(true);
     setError(null);
+    setFieldErrors({});
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setFieldErrors({ email: ['Email is required'] });
+      return;
+    }
+    if (!password) {
+      setFieldErrors({ password: ['Password is required'] });
+      return;
+    }
+
+    setLoading(true);
     try {
-      await login(email.trim(), password);
-      onSuccess();
+      await login(trimmedEmail, password);
     } catch (e) {
-      if (axios.isAxiosError(e)) {
-        const status = e.response?.status;
-        const msg = (e.response?.data as { message?: string } | undefined)?.message;
-        setError(msg ?? `Request failed (${status ?? 'network'})`);
+      if (axios.isAxiosError(e) && isProblemDetails(e.response?.data)) {
+        const validation = getValidationErrors(e.response.data);
+        if (validation) setFieldErrors(validation);
+        setError(getApiErrorMessage(e));
       } else {
-        setError(e instanceof Error ? e.message : 'Login failed');
+        setError(getApiErrorMessage(e, 'Login failed'));
       }
     } finally {
       setLoading(false);
@@ -40,50 +54,46 @@ export function LoginScreen({ onSuccess }: LoginScreenProps) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
-      <TextInput
-        style={styles.input}
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        placeholder="Email"
-        keyboardType="email-address"
-      />
-      <TextInput
-        style={styles.input}
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        placeholder="Password"
-      />
-      <TouchableOpacity style={styles.button} onPress={() => void handleLogin()} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign in</Text>}
-      </TouchableOpacity>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-    </View>
+    <SafeAreaView className="flex-1 bg-background">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerClassName="flex-grow justify-center p-4"
+          keyboardShouldPersistTaps="handled"
+        >
+          <Card className="mx-auto w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Sign in</CardTitle>
+              <CardDescription>Enter your credentials to access the catalog.</CardDescription>
+            </CardHeader>
+            <CardContent className="gap-4">
+              <Input
+                label="Email"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                placeholder="admin@local.dev"
+                error={fieldErrors.email?.[0]}
+              />
+              <Input
+                label="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureToggle
+                placeholder="Password"
+                error={fieldErrors.password?.[0]}
+              />
+              {error ? <Text variant="error">{error}</Text> : null}
+              <Button loading={loading} onPress={() => void handleLogin()}>
+                Sign in
+              </Button>
+            </CardContent>
+          </Card>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  title: { fontSize: 22, fontWeight: '600', marginBottom: 12 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-  },
-  button: {
-    backgroundColor: '#2563eb',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  buttonText: { color: '#fff', fontWeight: '600' },
-  error: { color: '#dc2626', marginTop: 8 },
-});

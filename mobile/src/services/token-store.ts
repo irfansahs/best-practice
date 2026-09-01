@@ -1,5 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
-import { REFRESH_TOKEN_KEY } from '../config';
+import { REFRESH_TOKEN_KEY } from '@/config';
 
 let accessToken: string | null = null;
 
