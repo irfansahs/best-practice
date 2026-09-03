@@ -25,7 +25,8 @@ const PAGE_SIZE = 20;
 
 export function ProductsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList, 'ProductsList'>>();
-  const { logout, activeOrganization, switchOrganization, user } = useAuth();
+  const { logout, activeOrganization, switchOrganization, user, hasPermission } = useAuth();
+  const canRead = hasPermission(Permissions.Catalog.Products.Read);
   const [items, setItems] = useState<ProductListItem[]>([]);
   const [page, setPage] = useState(1);
   const [hasNext, setHasNext] = useState(false);
@@ -44,6 +45,7 @@ export function ProductsScreen() {
 
   const loadPage = useCallback(
     async (pageToLoad: number, searchTerm: string, append: boolean) => {
+      if (!canRead) return;
       if (append) {
         setLoadingMore(true);
         loadingMoreRef.current = true;
@@ -67,7 +69,7 @@ export function ProductsScreen() {
         loadingMoreRef.current = false;
       }
     },
-    [],
+    [canRead],
   );
 
   useEffect(() => {
@@ -83,6 +85,16 @@ export function ProductsScreen() {
     if (!hasNext || loadingMoreRef.current || loading) return;
     void loadPage(page + 1, debouncedSearch, true);
   };
+
+  if (!canRead) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background px-4">
+        <Text variant="muted" className="text-center">
+          You do not have permission to view products.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-background">

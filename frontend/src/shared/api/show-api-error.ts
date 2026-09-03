@@ -6,8 +6,8 @@ export function showApiError(error: unknown, t: TFunction): void {
   if (error && typeof error === 'object' && 'data' in error) {
     const data = (error as { data: unknown }).data;
     if (isProblemDetails(data)) {
+      // 403 toast is handled once by the axios response interceptor.
       if (data.status === 403) {
-        toast.error(t('Common.AccessDenied.Title'));
         return;
       }
 

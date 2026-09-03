@@ -53,7 +53,7 @@ AuthorizationBehavior runs only for `IAuthorizedRequest`. Endpoints use `.Requir
 
 Fixed order — do not change:
 
-`ExceptionHandler -> Hsts/HttpsRedirection -> SecurityHeaders -> SerilogRequestLogging -> CorrelationId -> ResponseCompression -> RequestLocalization -> Authentication -> Authorization -> RateLimiter -> MapEndpoints`
+`ExceptionHandler -> ForwardedHeaders -> Hsts/HttpsRedirection -> SecurityHeaders -> SerilogRequestLogging -> CorrelationId -> ResponseCompression -> RequestLocalization -> Authentication -> Authorization -> RateLimiter -> MapEndpoints`
 
 ## New Feature — 7 Steps
 
@@ -165,6 +165,8 @@ dotnet ef migrations has-pending-model-changes --project backend/src/Infrastruct
 cd frontend && npm install && npm run dev
 cd frontend && npm run build && npm run lint && npm run test
 ```
+
+Automatic `MigrateAsync` / seed run only in **Development**. Outside Development apply migrations with `dotnet ef database update` (or a CI migrate job) and inject `Jwt__SecretKey` / `Database__ConnectionString` via environment — never the repo defaults.
 
 ## Backlog (v1 out of scope)
 

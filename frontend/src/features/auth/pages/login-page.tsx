@@ -9,7 +9,8 @@ import { Label } from '@/shared/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { FormFieldError } from '@/shared/components/form-field-error';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { login, selectHasPermission, selectIsAuthenticated } from '@/features/auth/slice/auth-slice';
+import { login, selectIsAuthenticated } from '@/features/auth/slice/auth-slice';
+import { usePermission } from '@/features/auth/hooks/use-permission';
 import { loginSchema, type LoginFormValues } from '@/features/auth/schemas/login-schema';
 import { Permissions } from '@/shared/api/api-types';
 
@@ -17,8 +18,8 @@ export function LoginPage() {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
-  const canReadProducts = useAppSelector(selectHasPermission(Permissions.Catalog.Products.Read));
-  const canReadCategories = useAppSelector(selectHasPermission(Permissions.Catalog.Categories.Read));
+  const canReadProducts = usePermission(Permissions.Catalog.Products.Read);
+  const canReadCategories = usePermission(Permissions.Catalog.Categories.Read);
   const location = useLocation();
   const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
 

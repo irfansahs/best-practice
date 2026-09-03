@@ -75,7 +75,7 @@ export function LoginScreen() {
                 onChangeText={setEmail}
                 autoCapitalize="none"
                 keyboardType="email-address"
-                placeholder="admin@local.dev"
+                placeholder="aquacare@local.dev"
                 error={fieldErrors.email?.[0]}
               />
               <Input

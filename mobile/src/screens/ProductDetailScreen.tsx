@@ -4,7 +4,9 @@ import { useRoute, type RouteProp } from '@react-navigation/native';
 import { getApiErrorMessage } from '@/api/client';
 import { getProductById } from '@/api/products-api';
 import type { ProductDetailDto } from '@/api/types';
+import { Permissions } from '@/api/types';
 import type { AppStackParamList } from '@/navigation/types';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge } from '@/components/ui/badge';
 import { Text } from '@/components/ui/text';
@@ -12,11 +14,14 @@ import { Text } from '@/components/ui/text';
 export function ProductDetailScreen() {
   const route = useRoute<RouteProp<AppStackParamList, 'ProductDetail'>>();
   const { id } = route.params;
+  const { hasPermission } = useAuth();
+  const canRead = hasPermission(Permissions.Catalog.Products.Read);
   const [product, setProduct] = useState<ProductDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    if (!canRead) return;
     setLoading(true);
     setError(null);
     try {
@@ -28,11 +33,21 @@ export function ProductDetailScreen() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, canRead]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  if (!canRead) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background px-4">
+        <Text variant="muted" className="text-center">
+          You do not have permission to view this product.
+        </Text>
+      </View>
+    );
+  }
 
   if (loading) {
     return (

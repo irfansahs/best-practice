@@ -2,6 +2,7 @@ using Application.Abstractions.Data;
 using Application.Abstractions.Messaging;
 using Application.Abstractions.Security;
 using Domain.Identity;
+using Domain.Identity.ValueObjects;
 using Domain.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel.Results;
@@ -16,11 +17,14 @@ public sealed class AddMemberCommandHandler(IAppDbContext db, ICurrentUser curre
         var organization = await db.Organizations.FirstOrDefaultAsync(o => o.Id == request.OrganizationId, cancellationToken);
         if (organization is null) return TenancyErrors.OrganizationNotFound;
 
-        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
+        var emailResult = Email.Create(request.Email);
+        if (emailResult.IsFailure) return emailResult.Error;
+
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == emailResult.Value, cancellationToken);
         if (user is null) return IdentityErrors.UserNotFound;
 
         var exists = await db.Memberships.IgnoreQueryFilters()
-            .AnyAsync(m => m.UserId == request.UserId && m.OrganizationId == request.OrganizationId && !m.IsDeleted, cancellationToken);
+            .AnyAsync(m => m.UserId == user.Id && m.OrganizationId == request.OrganizationId && !m.IsDeleted, cancellationToken);
         if (exists) return TenancyErrors.MembershipAlreadyExists;
 
         var roles = await db.Roles

@@ -7,7 +7,7 @@ public sealed record AddMemberResponse(Guid MembershipId);
 
 public sealed record AddMemberCommand(
     Guid OrganizationId,
-    Guid UserId,
+    string Email,
     IReadOnlyCollection<Guid> RoleIds,
     string? Title,
     bool IsPrimary = false) : ICommand<AddMemberResponse>, IAuthorizedRequest

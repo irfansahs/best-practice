@@ -24,8 +24,7 @@ import {
 } from '@/shared/components/ui/alert-dialog';
 import type { ProductListItem } from '@/shared/api/api-types';
 import { Permissions } from '@/shared/api/api-types';
-import { useAppSelector } from '@/app/hooks';
-import { selectHasPermission } from '@/features/auth/slice/auth-slice';
+import { usePermission } from '@/features/auth/hooks/use-permission';
 import { useDeleteProductMutation } from '@/features/catalog/products/api/products-api';
 import { showApiError } from '@/shared/api/show-api-error';
 
@@ -37,8 +36,8 @@ interface ProductsTableProps {
 export function ProductsTable({ items, isLoading }: ProductsTableProps) {
   const { t } = useTranslation();
   const [deleteProduct] = useDeleteProductMutation();
-  const canUpdate = useAppSelector(selectHasPermission(Permissions.Catalog.Products.Update));
-  const canDelete = useAppSelector(selectHasPermission(Permissions.Catalog.Products.Delete));
+  const canUpdate = usePermission(Permissions.Catalog.Products.Update);
+  const canDelete = usePermission(Permissions.Catalog.Products.Delete);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const handleDelete = async () => {

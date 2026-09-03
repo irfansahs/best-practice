@@ -12,6 +12,17 @@ public static class EndpointConventions
             .WithValidationProblem()
             .RequirePermission(permission);
 
+    /// <summary>
+    /// Command that returns <see cref="ApiResponse{T}"/> with 200 (e.g. upsert/import body responses).
+    /// Prefer <see cref="AsCreate{T}"/> when the handler returns 201 Created.
+    /// </summary>
+    public static RouteHandlerBuilder AsCommand<T>(this RouteHandlerBuilder b, string name, string permission) =>
+        b.WithName(name)
+            .Produces<ApiResponse<T>>()
+            .WithDefaultProblems()
+            .WithValidationProblem()
+            .RequirePermission(permission);
+
     public static RouteHandlerBuilder AsGetById<T>(this RouteHandlerBuilder b, string name, string permission) =>
         b.WithName(name)
             .Produces<ApiResponse<T>>()

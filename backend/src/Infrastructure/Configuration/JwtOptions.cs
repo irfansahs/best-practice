@@ -6,6 +6,9 @@ public sealed class JwtOptions
 {
     public const string SectionName = "Jwt";
 
+    /// <summary>Default key shipped in appsettings.json — must not be used in Production.</summary>
+    public const string KnownDevelopmentSecretKey = "dev-secret-key-must-be-at-least-32-chars!";
+
     [Required]
     public string Issuer { get; init; } = null!;
 

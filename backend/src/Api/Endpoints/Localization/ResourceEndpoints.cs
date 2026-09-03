@@ -23,10 +23,10 @@ public sealed class ResourceEndpoints : IEndpoint
 
         g.MapPut("/translations", (UpsertTranslationCommand cmd, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
                 d.SendToApiResult(cmd, ctx, ct))
-            .AsQuery<UpsertTranslationResponse>("UpsertTranslation", Permissions.Localization.Manage);
+            .AsCommand<UpsertTranslationResponse>("UpsertTranslation", Permissions.Localization.Manage);
 
         g.MapPost("/translations/import", (ImportTranslationsCommand cmd, IDispatcher d, HttpContext ctx, CancellationToken ct) =>
                 d.SendToApiResult(cmd, ctx, ct))
-            .AsQuery<ImportTranslationsResponse>("ImportTranslations", Permissions.Localization.Manage);
+            .AsCommand<ImportTranslationsResponse>("ImportTranslations", Permissions.Localization.Manage);
     }
 }

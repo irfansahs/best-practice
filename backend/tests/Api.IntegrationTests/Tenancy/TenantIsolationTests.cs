@@ -25,19 +25,21 @@ public sealed class TenantIsolationTests(DatabaseFixture fixture) : IntegrationT
         var supplierAId = await CreateOrganizationAsync($"Supplier A {suffix}", $"supplier-a-{suffix}", OrganizationSeeder.AquaCareId);
         var supplierBId = await CreateOrganizationAsync($"Supplier B {suffix}", $"supplier-b-{suffix}", OrganizationSeeder.AquaCareId);
 
-        var userA = await RegisterAsync($"a-{suffix}@test.dev", "SupplierPass123!");
-        var userB = await RegisterAsync($"b-{suffix}@test.dev", "SupplierPass123!");
+        var userAEmail = $"a-{suffix}@test.dev";
+        var userBEmail = $"b-{suffix}@test.dev";
+        await RegisterAsync(userAEmail, "SupplierPass123!");
+        await RegisterAsync(userBEmail, "SupplierPass123!");
 
-        await AddMemberAsync(supplierAId, userA, PermissionSeeder.SupplierAdminRoleId);
-        await AddMemberAsync(supplierBId, userB, PermissionSeeder.SupplierAdminRoleId);
+        await AddMemberAsync(supplierAId, userAEmail, PermissionSeeder.SupplierAdminRoleId);
+        await AddMemberAsync(supplierBId, userBEmail, PermissionSeeder.SupplierAdminRoleId);
 
-        var sessionA = await LoginAsync($"a-{suffix}@test.dev", "SupplierPass123!");
+        var sessionA = await LoginAsync(userAEmail, "SupplierPass123!");
         SetBearer(sessionA.AccessToken);
         var categoryA = await CreateCategoryAsync($"Cat A {suffix}");
         var skuA = $"A{suffix}";
         var productAId = await CreateProductAsync(skuA, categoryA);
 
-        var sessionB = await LoginAsync($"b-{suffix}@test.dev", "SupplierPass123!");
+        var sessionB = await LoginAsync(userBEmail, "SupplierPass123!");
         SetBearer(sessionB.AccessToken);
         var categoryB = await CreateCategoryAsync($"Cat B {suffix}");
         var skuB = $"B{suffix}";
@@ -63,8 +65,9 @@ public sealed class TenantIsolationTests(DatabaseFixture fixture) : IntegrationT
         SetBearer(admin.AccessToken);
 
         var orgId = await CreateOrganizationAsync($"Suspended {suffix}", $"suspended-{suffix}", OrganizationSeeder.AquaCareId);
-        var userId = await RegisterAsync($"s-{suffix}@test.dev", "SupplierPass123!");
-        await AddMemberAsync(orgId, userId, PermissionSeeder.SupplierAdminRoleId);
+        var email = $"s-{suffix}@test.dev";
+        await RegisterAsync(email, "SupplierPass123!");
+        await AddMemberAsync(orgId, email, PermissionSeeder.SupplierAdminRoleId);
 
         var suspend = await Client.PostAsJsonAsync($"/api/v1/tenancy/organizations/{orgId}/status", new { status = "Suspended" });
         suspend.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -183,11 +186,11 @@ public sealed class TenantIsolationTests(DatabaseFixture fixture) : IntegrationT
         return payload!.Data.Id;
     }
 
-    private async Task AddMemberAsync(Guid organizationId, Guid userId, Guid roleId)
+    private async Task AddMemberAsync(Guid organizationId, string email, Guid roleId)
     {
         var response = await Client.PostAsJsonAsync($"/api/v1/tenancy/organizations/{organizationId}/members", new
         {
-            userId,
+            email,
             roleIds = new[] { roleId },
             title = "Admin",
             isPrimary = true

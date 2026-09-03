@@ -10,6 +10,10 @@ vi.mock('sonner', () => ({
 import { toast } from 'sonner';
 
 describe('showApiError', () => {
+  beforeEach(() => {
+    vi.mocked(toast.error).mockClear();
+  });
+
   it('uses extensions.code for domain errors', () => {
     const t = (key: string) => key;
     showApiError(
@@ -26,7 +30,7 @@ describe('showApiError', () => {
     expect(toast.error).toHaveBeenCalledWith('Catalog.Product.NotFound');
   });
 
-  it('maps 403 to access denied title', () => {
+  it('skips toast for 403 (handled by axios interceptor)', () => {
     const t = (key: string) => key;
     showApiError(
       {
@@ -37,7 +41,6 @@ describe('showApiError', () => {
       },
       t,
     );
-
-    expect(toast.error).toHaveBeenCalledWith('Common.AccessDenied.Title');
+    expect(toast.error).not.toHaveBeenCalled();
   });
 });

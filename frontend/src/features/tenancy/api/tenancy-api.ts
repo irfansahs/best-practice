@@ -41,7 +41,7 @@ export const tenancyApi = baseApi.injectEndpoints({
     }),
     addMember: builder.mutation<
       ApiResponse<{ membershipId: string }>,
-      { organizationId: string; userId: string; roleIds: string[]; title?: string; isPrimary?: boolean }
+      { organizationId: string; email: string; roleIds: string[]; title?: string; isPrimary?: boolean }
     >({
       query: ({ organizationId, ...body }) => ({
         url: `/tenancy/organizations/${organizationId}/members`,

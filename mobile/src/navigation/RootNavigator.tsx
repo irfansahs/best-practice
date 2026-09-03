@@ -6,6 +6,8 @@ import { LoginScreen } from '@/screens/LoginScreen';
 import { ProductsScreen } from '@/screens/ProductsScreen';
 import { ProductDetailScreen } from '@/screens/ProductDetailScreen';
 import { CategoriesScreen } from '@/screens/CategoriesScreen';
+import { PermissionGate } from '@/components/PermissionGate';
+import { Permissions } from '@/api/types';
 import type { AppStackParamList, AuthStackParamList } from '@/navigation/types';
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -19,12 +21,36 @@ function AuthNavigator() {
   );
 }
 
+function GatedProductsScreen() {
+  return (
+    <PermissionGate permission={Permissions.Catalog.Products.Read}>
+      <ProductsScreen />
+    </PermissionGate>
+  );
+}
+
+function GatedProductDetailScreen() {
+  return (
+    <PermissionGate permission={Permissions.Catalog.Products.Read}>
+      <ProductDetailScreen />
+    </PermissionGate>
+  );
+}
+
+function GatedCategoriesScreen() {
+  return (
+    <PermissionGate permission={Permissions.Catalog.Categories.Read}>
+      <CategoriesScreen />
+    </PermissionGate>
+  );
+}
+
 function AppNavigator() {
   return (
     <AppStack.Navigator>
-      <AppStack.Screen name="ProductsList" component={ProductsScreen} options={{ title: 'Products' }} />
-      <AppStack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ title: 'Product' }} />
-      <AppStack.Screen name="CategoriesList" component={CategoriesScreen} options={{ title: 'Categories' }} />
+      <AppStack.Screen name="ProductsList" component={GatedProductsScreen} options={{ title: 'Products' }} />
+      <AppStack.Screen name="ProductDetail" component={GatedProductDetailScreen} options={{ title: 'Product' }} />
+      <AppStack.Screen name="CategoriesList" component={GatedCategoriesScreen} options={{ title: 'Categories' }} />
     </AppStack.Navigator>
   );
 }

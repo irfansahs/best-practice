@@ -13,17 +13,26 @@ var app = builder.Build();
 
 app.ConfigurePipeline();
 
-try
+if (app.Environment.IsDevelopment())
 {
-    using var scope = app.Services.CreateScope();
-    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await dbContext.Database.MigrateAsync();
-    await app.Services.SeedDatabaseAsync();
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await dbContext.Database.MigrateAsync();
+        await app.Services.SeedDatabaseAsync();
+    }
+    catch (Exception ex)
+    {
+        Log.Fatal(ex, "Database migration or seeding failed during startup");
+        throw;
+    }
 }
-catch (Exception ex)
+else
 {
-    Log.Fatal(ex, "Database migration or seeding failed during startup");
-    throw;
+    Log.Information(
+        "Skipping automatic Migrate/Seed outside Development. Apply with: " +
+        "dotnet ef database update --project backend/src/Infrastructure --startup-project backend/src/Api");
 }
 
 app.Run();

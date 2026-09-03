@@ -28,7 +28,7 @@ docker compose --profile dev up -d --build
 
 Default admin (seeded): `admin@local.dev` / `ChangeMe123!`
 
-**Note:** `mobile-dev` is Expo **Web** in the browser. Android emulator / Expo Go still use local Metro: `cd mobile && npx expo start --android` (API at `http://10.0.2.2:5202/api/v1`).
+**Note:** `mobile-dev` is Expo **Web** in the browser. For Android emulator / Expo Go use local Metro (`cd mobile && npx expo start --android`) and set `EXPO_PUBLIC_API_URL=http://10.0.2.2:5202/api/v1` (default fallback is `http://localhost:5202/api/v1`).
 
 ### IDE API debugging (SQL in Docker, API local)
 
@@ -67,9 +67,12 @@ mobile/
 dotnet build backend/App.slnx
 dotnet test backend/App.slnx
 dotnet ef migrations add <Name> --project backend/src/Infrastructure --startup-project backend/src/Api
+dotnet ef database update --project backend/src/Infrastructure --startup-project backend/src/Api
 dotnet ef migrations has-pending-model-changes --project backend/src/Infrastructure --startup-project backend/src/Api
 cd frontend && npm run dev && npm run build && npm run lint && npm run test
 ```
+
+**Production note:** The API migrates and seeds the database only when `ASPNETCORE_ENVIRONMENT=Development`. For other environments run `dotnet ef database update` (or an equivalent CI job) and set `Jwt__SecretKey` / `Database__ConnectionString` via secrets — do not use the development defaults from `appsettings.json`.
 
 ## Architecture
 

@@ -175,6 +175,10 @@ public sealed class PermissionSeeder
         }
 
         foreach (var (permission, scope) in grants)
-            role.GrantPermission(permission, scope);
+        {
+            var grant = role.GrantPermission(permission, scope);
+            if (grant.IsFailure)
+                throw new InvalidOperationException($"Failed to grant '{permission.Code}' to role '{name}': {grant.Error.Code}");
+        }
     }
 }

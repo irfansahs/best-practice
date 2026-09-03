@@ -1,4 +1,6 @@
 import axios, { type AxiosError, type AxiosRequestConfig } from 'axios';
+import i18n from 'i18next';
+import { toast } from 'sonner';
 import type { ProblemDetails } from './problem-details';
 import { isProblemDetails, getProblemMessage } from './problem-details';
 import {
@@ -82,6 +84,11 @@ axiosClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as (AxiosRequestConfig & { _retry?: boolean }) | undefined;
+
+    if (error.response?.status === 403) {
+      toast.error(i18n.t('Common.AccessDenied.Title'));
+      return Promise.reject(error);
+    }
 
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       const isAuthEndpoint =

@@ -47,8 +47,18 @@ export interface CurrentUserDto {
 
 export const Permissions = {
   Catalog: {
-    Products: { Read: 'catalog.products.read' },
-    Categories: { Read: 'catalog.categories.read' },
+    Products: {
+      Read: 'catalog.products.read',
+      Create: 'catalog.products.create',
+      Update: 'catalog.products.update',
+      Delete: 'catalog.products.delete',
+    },
+    Categories: {
+      Read: 'catalog.categories.read',
+      Create: 'catalog.categories.create',
+      Update: 'catalog.categories.update',
+      Delete: 'catalog.categories.delete',
+    },
   },
 } as const;
 

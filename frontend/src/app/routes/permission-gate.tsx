@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { PermissionScope } from '@/shared/api/api-types';
-import { useAppSelector } from '@/app/hooks';
-import { selectHasPermission } from '@/features/auth/slice/auth-slice';
+import { usePermission } from '@/features/auth/hooks/use-permission';
 import { AccessDenied } from '@/shared/components/access-denied';
 
 interface PermissionGateProps {
@@ -17,7 +16,7 @@ export function PermissionGate({
   children,
   fallback,
 }: PermissionGateProps) {
-  const hasPermission = useAppSelector(selectHasPermission(permission, minScope));
+  const hasPermission = usePermission(permission, minScope);
 
   if (!hasPermission) {
     return <>{fallback ?? <AccessDenied />}</>;

@@ -44,7 +44,7 @@ export function MembersPage() {
   const [addMember] = useAddMemberMutation();
   const [changeStatus] = useChangeMemberStatusMutation();
   const [open, setOpen] = useState(false);
-  const [userId, setUserId] = useState('');
+  const [email, setEmail] = useState('');
   const [title, setTitle] = useState('');
   const [roleId, setRoleId] = useState('');
 
@@ -57,14 +57,14 @@ export function MembersPage() {
     try {
       await addMember({
         organizationId: selectedOrg,
-        userId,
+        email: email.trim(),
         roleIds: [roleId || defaultRoleId].filter(Boolean),
         title: title || undefined,
         isPrimary: false,
       }).unwrap();
       toast.success(t('Tenancy.Members.Added'));
       setOpen(false);
-      setUserId('');
+      setEmail('');
       setTitle('');
     } catch (error) {
       showApiError(error, t);
@@ -178,8 +178,15 @@ export function MembersPage() {
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label htmlFor="member-user">{t('Tenancy.Members.UserId')}</Label>
-              <Input id="member-user" value={userId} onChange={(e) => setUserId(e.target.value)} />
+              <Label htmlFor="member-email">{t('Tenancy.Members.Email')}</Label>
+              <Input
+                id="member-email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="user@example.com"
+              />
             </div>
             <div className="space-y-1">
               <Label htmlFor="member-title">{t('Tenancy.Members.TitleLabel')}</Label>

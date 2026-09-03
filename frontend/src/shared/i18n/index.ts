@@ -127,7 +127,6 @@ const fallbackResources = {
       'Tenancy.Members.Roles': 'Roles',
       'Tenancy.Members.Status': 'Status',
       'Tenancy.Members.Actions': 'Actions',
-      'Tenancy.Members.UserId': 'User ID',
       'Tenancy.Members.TitleLabel': 'Title',
       'Tenancy.Members.Role': 'Role',
       'Tenancy.Members.Added': 'Member added',

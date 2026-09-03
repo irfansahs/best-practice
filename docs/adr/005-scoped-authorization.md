@@ -19,5 +19,6 @@ RBAC already answered *whether* a user may call an action (`catalog.products.rea
 ## Consequences
 
 - One permission catalog serves platform, operator, and supplier with different scopes.
-- JWT size grows with grant count; if claims exceed ~100, switch to role ids in the token plus resolver (the abstraction already exists).
+- Dual authorization is intentional: HTTP `.RequirePermission` rejects at the API boundary; `AuthorizationBehavior` + `IAuthorizedRequest` covers handler invocation from non-HTTP hosts. Claim checks are cheap; do not collapse the layers in v1.
+- JWT size grows with grant count; request-time auth reads JWT claims. `IPermissionResolver` (HybridCache) is used only when minting sessions (login / refresh / switch / me), not on every request. If claims exceed ~100, switch to role ids in the token plus resolver (the abstraction already exists).
 - `Permission.MaxScope` and `IsPlatformOnly` stop over-granting at write time.

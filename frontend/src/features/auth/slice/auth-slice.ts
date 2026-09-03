@@ -168,14 +168,18 @@ export const selectIsAuthenticated = (state: RootState) => state.auth.status ===
 export const selectActiveOrganization = (state: RootState) => state.auth.user?.activeOrganization ?? null;
 export const selectOrganizations = (state: RootState) => state.auth.user?.organizations ?? [];
 
+export const selectPermissions = (state: RootState): Record<string, number> =>
+  permissionMap(state.auth.user);
+
+/** Prefer `usePermission` — this factory recreates a selector per call. */
 export const selectHasPermission =
   (permission: string, minScope: number = PermissionScope.Organization) =>
   (state: RootState) =>
-    (permissionMap(state.auth.user)[permission] ?? -1) >= minScope;
+    (selectPermissions(state)[permission] ?? -1) >= minScope;
 
 export const selectHasAnyPermission =
   (...permissions: string[]) =>
   (state: RootState) => {
-    const map = permissionMap(state.auth.user);
+    const map = selectPermissions(state);
     return permissions.some((p) => (map[p] ?? -1) >= PermissionScope.Organization);
   };

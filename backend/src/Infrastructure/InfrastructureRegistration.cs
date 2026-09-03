@@ -39,7 +39,7 @@ public static class InfrastructureRegistration
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddOptionsWithValidation<JwtOptions>(configuration);
+        services.AddJwtOptions(configuration);
         services.AddOptionsWithValidation<DatabaseOptions>(configuration);
         services.AddOptionsWithValidation<CacheOptions>(configuration);
         services.AddOptionsWithValidation<LogOptions>(configuration);
@@ -172,6 +172,21 @@ public static class InfrastructureRegistration
             sp.GetRequiredService<DomainEventInterceptor>(),
             sp.GetRequiredService<AuditLogInterceptor>(),
             sp.GetRequiredService<SlowQueryInterceptor>());
+    }
+
+    private static IServiceCollection AddJwtOptions(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<JwtOptions>()
+            .Bind(configuration.GetSection(JwtOptions.SectionName))
+            .ValidateDataAnnotations()
+            .Validate(
+                (JwtOptions options, IHostEnvironment env) =>
+                    !env.IsProduction()
+                    || !string.Equals(options.SecretKey, JwtOptions.KnownDevelopmentSecretKey, StringComparison.Ordinal),
+                "Jwt:SecretKey must not use the development default in Production. Inject Jwt__SecretKey via environment or secrets.")
+            .ValidateOnStart();
+
+        return services;
     }
 
     private static IServiceCollection AddOptionsWithValidation<TOptions>(this IServiceCollection services, IConfiguration configuration)

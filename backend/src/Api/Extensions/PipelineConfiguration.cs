@@ -12,17 +12,20 @@ public static class PipelineConfiguration
         // 1. UseExceptionHandler (GlobalExceptionHandler — outermost)
         app.UseExceptionHandler();
 
-        // 2. UseHsts + UseHttpsRedirection (skip redirect in Development so HTTP localhost works with Vite)
+        // 2. UseForwardedHeaders (real client IP / proto behind nginx/ALB — before rate limiting)
+        app.UseForwardedHeaders();
+
+        // 3. UseHsts + UseHttpsRedirection (skip redirect in Development so HTTP localhost works with Vite)
         if (!app.Environment.IsDevelopment())
         {
             app.UseHsts();
             app.UseHttpsRedirection();
         }
 
-        // 3. SecurityHeadersMiddleware
+        // 4. SecurityHeadersMiddleware
         app.UseMiddleware<SecurityHeadersMiddleware>();
 
-        // 4. UseSerilogRequestLogging
+        // 5. UseSerilogRequestLogging
         app.UseSerilogRequestLogging(options =>
         {
             options.GetLevel = (context, _, exception) => exception is not null
@@ -34,28 +37,28 @@ public static class PipelineConfiguration
                         : LogEventLevel.Information;
         });
 
-        // 5. CorrelationIdMiddleware
+        // 6. CorrelationIdMiddleware
         app.UseMiddleware<CorrelationIdMiddleware>();
 
-        // 6. UseResponseCompression
+        // 7. UseResponseCompression
         app.UseResponseCompression();
 
-        // 7. UseRequestLocalization
+        // 8. UseRequestLocalization
         app.UseRequestLocalization();
 
         // CORS must run before authentication for preflight requests
         app.UseCorsPolicy();
 
-        // 8. UseAuthentication
+        // 9. UseAuthentication
         app.UseAuthentication();
 
-        // 9. UseAuthorization
+        // 10. UseAuthorization
         app.UseAuthorization();
 
-        // 10. UseRateLimiter
+        // 11. UseRateLimiter
         app.UseRateLimiter();
 
-        // 11. MapEndpoints
+        // 12. MapEndpoints
         app.MapEndpoints();
         app.MapOpenApiEndpoints();
 

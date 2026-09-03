@@ -22,6 +22,8 @@ import {
 import { PermissionScope, Permissions, type PermissionCatalogItem } from '@/shared/api/api-types';
 import { Can } from '@/shared/components/can';
 import { showApiError } from '@/shared/api/show-api-error';
+import { useAppSelector } from '@/app/hooks';
+import { selectActiveOrganization } from '@/features/auth/slice/auth-slice';
 import {
   useCreateRoleMutation,
   useGetPermissionCatalogQuery,
@@ -33,6 +35,8 @@ const scopeLabels = ['Own', 'Organization', 'Subtree', 'Global'] as const;
 
 export function RolesPage() {
   const { t } = useTranslation();
+  const activeOrganization = useAppSelector(selectActiveOrganization);
+  const canEditSystemRoles = activeOrganization?.type === 'Platform';
   const { data, isLoading, isError, refetch } = useGetRolesQuery();
   const { data: catalogData } = useGetPermissionCatalogQuery();
   const [createRole] = useCreateRoleMutation();
@@ -198,7 +202,7 @@ export function RolesPage() {
                     <td className="py-2">{role.permissions.length}</td>
                     <td className="py-2">
                       <Can permission={Permissions.Tenancy.Roles.Manage}>
-                        {!role.isSystemRole ? (
+                        {!role.isSystemRole || canEditSystemRoles ? (
                           <Button variant="outline" size="sm" onClick={() => openEdit(role.id)}>
                             {t('Tenancy.Roles.EditPermissions')}
                           </Button>

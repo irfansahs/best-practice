@@ -16,9 +16,6 @@ export function AuthBootstrap({ children }: AuthBootstrapProps) {
   useEffect(() => {
     setSessionExpiredHandler(() => {
       void dispatch(forceSessionExpired());
-      if (window.location.pathname !== '/login') {
-        window.location.assign('/login');
-      }
     });
 
     return () => setSessionExpiredHandler(null);
