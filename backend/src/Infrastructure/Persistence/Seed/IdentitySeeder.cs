@@ -1,6 +1,7 @@
 using Application.Abstractions.Security;
 using Domain.Identity;
 using Domain.Identity.ValueObjects;
+using Domain.Tenancy;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Seed;
@@ -13,20 +14,45 @@ public sealed class IdentitySeeder(IPasswordHasher passwordHasher)
 
     public async Task SeedAsync(AppDbContext context, CancellationToken cancellationToken = default)
     {
-        if (await context.Users.AnyAsync(cancellationToken)) return;
+        if (!await context.Users.IgnoreQueryFilters().AnyAsync(u => u.Id == AdminUserId, cancellationToken))
+        {
+            var user = User.Register(
+                AdminUserId,
+                Email.Create(AdminEmail).Value,
+                PasswordHash.Create(passwordHasher.Hash(AdminPassword)).Value,
+                FullName.Create("System", "Administrator").Value).Value;
+
+            context.Users.Add(user);
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
+        await EnsureAdminMembershipAsync(context, cancellationToken);
+    }
+
+    private static async Task EnsureAdminMembershipAsync(AppDbContext context, CancellationToken cancellationToken)
+    {
+        var existing = await context.Memberships.IgnoreQueryFilters()
+            .AnyAsync(m => m.UserId == AdminUserId && m.OrganizationId == OrganizationSeeder.RannaId && !m.IsDeleted, cancellationToken);
+        if (existing) return;
 
         var adminRole = await context.Roles
-            .Include(r => r.Permissions)
-            .FirstAsync(r => r.Id == PermissionSeeder.AdminRoleId, cancellationToken);
+            .Include(r => r.RolePermissions)
+            .ThenInclude(rp => rp.Permission)
+            .FirstAsync(r => r.Id == PermissionSeeder.PlatformAdminRoleId, cancellationToken);
 
-        var user = User.Register(
+        var ranna = await context.Organizations.IgnoreQueryFilters()
+            .FirstAsync(o => o.Id == OrganizationSeeder.RannaId, cancellationToken);
+
+        var membership = Membership.Create(
+            Guid.Parse("77777777-7777-7777-7777-777777777701"),
             AdminUserId,
-            Email.Create(AdminEmail).Value,
-            PasswordHash.Create(passwordHasher.Hash(AdminPassword)).Value,
-            FullName.Create("System", "Administrator").Value).Value;
+            ranna,
+            isPrimary: true,
+            joinedAt: DateTimeOffset.UtcNow,
+            title: "Platform administrator").Value;
 
-        user.AssignRole(adminRole);
-        context.Users.Add(user);
+        membership.AssignRole(adminRole, DateTimeOffset.UtcNow);
+        context.Memberships.Add(membership);
         await context.SaveChangesAsync(cancellationToken);
     }
 }

@@ -18,13 +18,15 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
             money.Property(m => m.Currency).HasColumnName("PriceCurrency").HasMaxLength(Money.MaxCurrencyLength).IsRequired();
         });
         builder.Property(x => x.CategoryId).IsRequired();
+        builder.Property(x => x.OrganizationId).IsRequired();
+        builder.Property(x => x.OrganizationPath).HasMaxLength(450).IsRequired();
         builder.Property(x => x.IsActive).IsRequired();
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property<byte[]>("RowVersion").IsRowVersion();
-        builder.HasQueryFilter(x => !x.IsDeleted);
         builder.HasMany(x => x.Translations).WithOne().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(x => x.Translations).HasField("_translations");
-        builder.HasIndex(x => x.Sku).IsUnique();
+        builder.HasIndex(x => new { x.OrganizationId, x.Sku }).IsUnique();
         builder.HasIndex(x => x.CategoryId);
+        builder.HasIndex(x => x.OrganizationPath);
     }
 }

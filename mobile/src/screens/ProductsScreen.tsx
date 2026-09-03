@@ -13,6 +13,8 @@ import { getProducts } from '@/api/products-api';
 import type { ProductListItem } from '@/api/types';
 import type { AppStackParamList } from '@/navigation/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { Can } from '@/components/Can';
+import { Permissions } from '@/api/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,7 +25,7 @@ const PAGE_SIZE = 20;
 
 export function ProductsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList, 'ProductsList'>>();
-  const { logout } = useAuth();
+  const { logout, activeOrganization, switchOrganization, user } = useAuth();
   const [items, setItems] = useState<ProductListItem[]>([]);
   const [page, setPage] = useState(1);
   const [hasNext, setHasNext] = useState(false);
@@ -85,11 +87,30 @@ export function ProductsScreen() {
   return (
     <View className="flex-1 bg-background">
       <View className="flex-row items-center justify-between px-4 py-3 border-b border-border">
-        <Text variant="h2">Products</Text>
+        <View>
+          <Text variant="h2">Products</Text>
+          {activeOrganization ? (
+            <Text variant="muted">{activeOrganization.name}</Text>
+          ) : null}
+        </View>
         <View className="flex-row gap-2">
-          <Button variant="ghost" size="sm" onPress={() => navigation.navigate('CategoriesList')}>
-            Categories
-          </Button>
+          <Can permission={Permissions.Catalog.Categories.Read}>
+            <Button variant="ghost" size="sm" onPress={() => navigation.navigate('CategoriesList')}>
+              Categories
+            </Button>
+          </Can>
+          {user?.organizations?.length ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={() => {
+                const next = user.organizations.find((org) => org.id !== activeOrganization?.id);
+                if (next) void switchOrganization(next.id);
+              }}
+            >
+              Switch
+            </Button>
+          ) : null}
           <Button variant="ghost" size="sm" onPress={() => void logout()}>
             Logout
           </Button>

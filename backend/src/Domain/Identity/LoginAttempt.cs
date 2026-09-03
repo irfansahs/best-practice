@@ -8,6 +8,8 @@ public sealed class LoginAttempt : Entity
     public const int MaxIpAddressLength = 64;
 
     public Guid? UserId { get; private set; }
+    public Guid? OrganizationId { get; private set; }
+    public ClientType? ClientType { get; private set; }
     public string Email { get; private set; } = null!;
     public string? IpAddress { get; private set; }
     public bool Success { get; private set; }
@@ -15,20 +17,42 @@ public sealed class LoginAttempt : Entity
 
     private LoginAttempt() { }
 
-    private LoginAttempt(Guid id, Guid? userId, string email, string? ipAddress, bool success, DateTimeOffset attemptedAt) : base(id)
+    private LoginAttempt(
+        Guid id,
+        Guid? userId,
+        string email,
+        string? ipAddress,
+        bool success,
+        DateTimeOffset attemptedAt,
+        Guid? organizationId,
+        ClientType? clientType) : base(id)
     {
         UserId = userId;
         Email = email;
         IpAddress = ipAddress;
         Success = success;
         AttemptedAt = attemptedAt;
+        OrganizationId = organizationId;
+        ClientType = clientType;
     }
 
-    internal static LoginAttempt CreateSuccess(Guid userId, string email, string? ipAddress, DateTimeOffset attemptedAt) =>
-        new(Guid.NewGuid(), userId, NormalizeEmail(email), NormalizeIp(ipAddress), true, attemptedAt);
+    internal static LoginAttempt CreateSuccess(
+        Guid userId,
+        string email,
+        string? ipAddress,
+        DateTimeOffset attemptedAt,
+        Guid? organizationId = null,
+        ClientType? clientType = null) =>
+        new(Guid.NewGuid(), userId, NormalizeEmail(email), NormalizeIp(ipAddress), true, attemptedAt, organizationId, clientType);
 
-    internal static LoginAttempt CreateFailure(Guid? userId, string email, string? ipAddress, DateTimeOffset attemptedAt) =>
-        new(Guid.NewGuid(), userId, NormalizeEmail(email), NormalizeIp(ipAddress), false, attemptedAt);
+    internal static LoginAttempt CreateFailure(
+        Guid? userId,
+        string email,
+        string? ipAddress,
+        DateTimeOffset attemptedAt,
+        Guid? organizationId = null,
+        ClientType? clientType = null) =>
+        new(Guid.NewGuid(), userId, NormalizeEmail(email), NormalizeIp(ipAddress), false, attemptedAt, organizationId, clientType);
 
     private static string NormalizeEmail(string email)
     {

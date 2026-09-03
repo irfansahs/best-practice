@@ -11,7 +11,7 @@ public sealed class RefreshTokenTests
     {
         var user = CreateUser();
         var createdAt = DateTimeOffset.UtcNow;
-        var token = user.IssueRefreshToken(Guid.NewGuid(), "hash", createdAt.AddDays(7), createdAt);
+        var token = user.IssueRefreshToken(Guid.NewGuid(), "hash", createdAt.AddDays(7), createdAt, Guid.NewGuid(), Guid.NewGuid(), ClientType.Web);
         var replacementId = Guid.NewGuid();
 
         token.IsActive(createdAt).ShouldBeTrue();
@@ -27,7 +27,7 @@ public sealed class RefreshTokenTests
     {
         var user = CreateUser();
         var createdAt = DateTimeOffset.UtcNow;
-        var token = user.IssueRefreshToken(Guid.NewGuid(), "hash", createdAt.AddMinutes(1), createdAt);
+        var token = user.IssueRefreshToken(Guid.NewGuid(), "hash", createdAt.AddMinutes(1), createdAt, Guid.NewGuid(), Guid.NewGuid(), ClientType.Web);
 
         token.IsExpired(createdAt.AddMinutes(2)).ShouldBeTrue();
         token.IsActive(createdAt.AddMinutes(2)).ShouldBeFalse();

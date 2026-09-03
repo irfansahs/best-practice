@@ -8,7 +8,7 @@ using SharedKernel.Results;
 
 namespace Domain.Catalog;
 
-public sealed class Product : AggregateRoot, IAggregateRoot, IAuditableEntity, ISoftDeletable
+public sealed class Product : AggregateRoot, IAggregateRoot, IAuditableEntity, ISoftDeletable, ITenantScoped
 {
     public const int MaxTranslationNameLength = 200;
     public const int MaxTranslationDescriptionLength = 4000;
@@ -18,6 +18,8 @@ public sealed class Product : AggregateRoot, IAggregateRoot, IAuditableEntity, I
     public Sku Sku { get; private set; } = null!;
     public Money Price { get; private set; } = null!;
     public Guid CategoryId { get; private set; }
+    public Guid OrganizationId { get; private set; }
+    public string OrganizationPath { get; private set; } = null!;
     public bool IsActive { get; private set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }
@@ -31,20 +33,31 @@ public sealed class Product : AggregateRoot, IAggregateRoot, IAuditableEntity, I
 
     private Product() { }
 
-    private Product(Guid id, Sku sku, Money price, Guid categoryId) : base(id)
+    private Product(Guid id, Sku sku, Money price, Guid categoryId, Guid organizationId, string organizationPath) : base(id)
     {
         Sku = sku;
         Price = price;
         CategoryId = categoryId;
+        OrganizationId = organizationId;
+        OrganizationPath = organizationPath;
         IsActive = true;
     }
 
-    public static Result<Product> Create(Guid id, Sku sku, Money price, Guid categoryId)
+    public static Result<Product> Create(Guid id, Sku sku, Money price, Guid categoryId, Guid organizationId, string organizationPath)
     {
         if (categoryId == Guid.Empty) return CatalogErrors.CategoryIdRequired;
-        var product = new Product(id, sku, price, categoryId);
+        if (organizationId == Guid.Empty || string.IsNullOrWhiteSpace(organizationPath))
+            return CatalogErrors.OrganizationRequired;
+        var product = new Product(id, sku, price, categoryId, organizationId, organizationPath);
         product.RaiseDomainEvent(new ProductCreatedEvent(product.Id, product.Sku.Value, product.Price.Amount, product.Price.Currency));
         return product;
+    }
+
+    public void AssignTenant(Guid organizationId, string organizationPath)
+    {
+        if (OrganizationId != Guid.Empty) return;
+        OrganizationId = organizationId;
+        OrganizationPath = organizationPath;
     }
 
     public Result SetTranslation(Guid languageId, string? name, string? description, Slug? slug = null)

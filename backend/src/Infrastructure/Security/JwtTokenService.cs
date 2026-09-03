@@ -3,7 +3,6 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Application.Abstractions.Security;
-using Domain.Identity;
 using Infrastructure.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -14,22 +13,30 @@ public sealed class JwtTokenService(IOptions<JwtOptions> jwtOptions) : ITokenSer
 {
     private static readonly JwtSecurityTokenHandler TokenHandler = new();
 
-    public (string Token, DateTimeOffset ExpiresAt) GenerateAccessToken(User user)
+    public (string Token, DateTimeOffset ExpiresAt) GenerateAccessToken(AccessTokenContext context)
     {
         var options = jwtOptions.Value;
-        var permissions = user.Roles.SelectMany(r => r.Permissions).Select(p => p.Code).Distinct(StringComparer.OrdinalIgnoreCase);
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new(JwtRegisteredClaimNames.Email, user.Email.Value),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(JwtRegisteredClaimNames.Sub, context.User.Id.ToString()),
+            new(JwtRegisteredClaimNames.Email, context.User.Email.Value),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new(AuthClaims.SecurityStamp, context.User.SecurityStamp.ToString()),
+            new(AuthClaims.OrganizationId, context.Organization.Id.ToString()),
+            new(AuthClaims.OrganizationPath, context.Organization.Path),
+            new(AuthClaims.OrganizationType, context.Organization.Type.ToString()),
+            new(AuthClaims.ClientType, context.ClientType.ToString().ToLowerInvariant())
         };
 
-        claims.AddRange(permissions.Select(p => new Claim("permission", p)));
+        if (context.IsImpersonating)
+            claims.Add(new Claim(AuthClaims.Impersonating, "1"));
 
+        claims.AddRange(context.Permissions.ToClaimValues().Select(p => new Claim(AuthClaims.Permission, p)));
+
+        var minutes = context.IsImpersonating ? options.ImpersonationAccessTokenMinutes : options.AccessTokenMinutes;
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.SecretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        var expires = DateTime.UtcNow.AddMinutes(options.AccessTokenMinutes);
+        var expires = DateTime.UtcNow.AddMinutes(minutes);
 
         var token = new JwtSecurityToken(
             issuer: options.Issuer,
@@ -43,6 +50,9 @@ public sealed class JwtTokenService(IOptions<JwtOptions> jwtOptions) : ITokenSer
 
     public DateTimeOffset GetRefreshTokenExpiresAt(DateTimeOffset issuedAt) =>
         issuedAt.AddDays(jwtOptions.Value.RefreshTokenDays);
+
+    public DateTimeOffset GetImpersonationAccessTokenExpiresAt(DateTimeOffset issuedAt) =>
+        issuedAt.AddMinutes(jwtOptions.Value.ImpersonationAccessTokenMinutes);
 
     public string GenerateRefreshToken()
     {

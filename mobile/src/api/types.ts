@@ -19,12 +19,38 @@ export interface LoginResponse {
   expiresAt: string;
 }
 
+export const PermissionScope = {
+  Own: 0,
+  Organization: 1,
+  Subtree: 2,
+  Global: 3,
+} as const;
+
+export interface OrganizationSummary {
+  id: string;
+  name: string;
+  slug: string;
+  type: string;
+  path: string;
+  isPrimary: boolean;
+}
+
 export interface CurrentUserDto {
   id: string;
   email: string;
   fullName: string;
-  permissions: string[];
+  permissions: Record<string, number>;
+  activeOrganization: OrganizationSummary | null;
+  organizations: OrganizationSummary[];
+  isImpersonating: boolean;
 }
+
+export const Permissions = {
+  Catalog: {
+    Products: { Read: 'catalog.products.read' },
+    Categories: { Read: 'catalog.categories.read' },
+  },
+} as const;
 
 export interface ProductListItem {
   id: string;

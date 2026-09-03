@@ -1,13 +1,17 @@
 using System.Text.Json;
 using Application.Abstractions.Security;
 using Infrastructure.Persistence.Entities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Infrastructure.Persistence.Interceptors;
 
-public sealed class AuditLogInterceptor(ICurrentUser currentUser, TimeProvider timeProvider) : SaveChangesInterceptor
+public sealed class AuditLogInterceptor(
+    ICurrentUser currentUser,
+    TimeProvider timeProvider,
+    IHttpContextAccessor httpContextAccessor) : SaveChangesInterceptor
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = false };
 
@@ -55,6 +59,11 @@ public sealed class AuditLogInterceptor(ICurrentUser currentUser, TimeProvider t
                 OldValues = entry.State is EntityState.Modified or EntityState.Deleted ? SerializeValues(entry.OriginalValues) : null,
                 NewValues = entry.State is EntityState.Added or EntityState.Modified ? SerializeValues(entry.CurrentValues) : null,
                 UserId = userId,
+                OrganizationId = currentUser.OrganizationId,
+                ActorUserId = currentUser.UserId,
+                IsImpersonated = currentUser.IsImpersonating,
+                ClientType = currentUser.ClientType?.ToString(),
+                CorrelationId = httpContextAccessor.HttpContext?.TraceIdentifier,
                 Timestamp = timestamp
             });
         }

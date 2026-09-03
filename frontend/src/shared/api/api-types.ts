@@ -24,11 +24,32 @@ export interface PagedList<T> {
   hasNext: boolean;
 }
 
+export const PermissionScope = {
+  Own: 0,
+  Organization: 1,
+  Subtree: 2,
+  Global: 3,
+} as const;
+
+export type PermissionScopeValue = (typeof PermissionScope)[keyof typeof PermissionScope];
+
+export interface OrganizationSummary {
+  id: string;
+  name: string;
+  slug: string;
+  type: string;
+  path: string;
+  isPrimary: boolean;
+}
+
 export interface CurrentUser {
   id: string;
   email: string;
   fullName: string;
-  permissions: string[];
+  permissions: Record<string, number>;
+  activeOrganization: OrganizationSummary | null;
+  organizations: OrganizationSummary[];
+  isImpersonating: boolean;
 }
 
 export interface LoginResponse {
@@ -91,6 +112,59 @@ export interface CreateProductResponse {
   sku: string;
 }
 
+export interface OrganizationListItem {
+  id: string;
+  parentId: string | null;
+  name: string;
+  slug: string;
+  type: string;
+  status: string;
+  path: string;
+  depth: number;
+}
+
+export interface OrganizationDetail extends OrganizationListItem {
+  contactEmail: string | null;
+  timeZoneId: string;
+  defaultCulture: string;
+}
+
+export interface MemberListItem {
+  membershipId: string;
+  userId: string;
+  email: string;
+  fullName: string;
+  status: string;
+  isPrimary: boolean;
+  title: string | null;
+  roles: string[];
+}
+
+export interface RolePermissionGrant {
+  permissionId: string;
+  code: string;
+  scope: number;
+}
+
+export interface RoleListItem {
+  id: string;
+  name: string;
+  description: string | null;
+  isSystemRole: boolean;
+  organizationId: string | null;
+  allowedClients: number;
+  permissions: RolePermissionGrant[];
+}
+
+export interface PermissionCatalogItem {
+  id: string;
+  code: string;
+  description: string | null;
+  module: string;
+  maxScope: number;
+  isPlatformOnly: boolean;
+}
+
 export interface Language {
   id: string;
   code: string;
@@ -132,5 +206,25 @@ export const Permissions = {
   Localization: {
     Read: 'localization.translations.read',
     Manage: 'localization.translations.manage',
+  },
+  Tenancy: {
+    Organizations: {
+      Read: 'tenancy.organizations.read',
+      Create: 'tenancy.organizations.create',
+      Update: 'tenancy.organizations.update',
+      Delete: 'tenancy.organizations.delete',
+      Impersonate: 'tenancy.organizations.impersonate',
+    },
+    Members: {
+      Read: 'tenancy.members.read',
+      Manage: 'tenancy.members.manage',
+    },
+    Roles: {
+      Read: 'tenancy.roles.read',
+      Manage: 'tenancy.roles.manage',
+    },
+    Permissions: {
+      Read: 'tenancy.permissions.read',
+    },
   },
 } as const;

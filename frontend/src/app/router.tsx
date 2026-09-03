@@ -8,6 +8,9 @@ import { ProductFormPage } from '@/features/catalog/products/pages/product-form-
 import { CategoriesListPage } from '@/features/catalog/categories/pages/categories-list-page';
 import { CategoryFormPage } from '@/features/catalog/categories/pages/category-form-page';
 import { TranslationManagerPage } from '@/features/localization/pages/translation-manager-page';
+import { OrganizationsPage } from '@/features/tenancy/pages/organizations-page';
+import { MembersPage } from '@/features/tenancy/pages/members-page';
+import { RolesPage } from '@/features/tenancy/pages/roles-page';
 import { Permissions } from '@/shared/api/api-types';
 import { PermissionGate } from '@/app/routes/permission-gate';
 
@@ -82,6 +85,30 @@ export const router = createBrowserRouter([
         element: (
           <PermissionGate permission={Permissions.Localization.Manage}>
             <TranslationManagerPage />
+          </PermissionGate>
+        ),
+      },
+      {
+        path: 'settings/organizations',
+        element: (
+          <PermissionGate permission={Permissions.Tenancy.Organizations.Read}>
+            <OrganizationsPage />
+          </PermissionGate>
+        ),
+      },
+      {
+        path: 'settings/members',
+        element: (
+          <PermissionGate permission={Permissions.Tenancy.Members.Read}>
+            <MembersPage />
+          </PermissionGate>
+        ),
+      },
+      {
+        path: 'settings/roles',
+        element: (
+          <PermissionGate permission={Permissions.Tenancy.Roles.Read}>
+            <RolesPage />
           </PermissionGate>
         ),
       },

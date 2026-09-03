@@ -1,3 +1,4 @@
+using Domain.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 
@@ -5,16 +6,17 @@ namespace Infrastructure.Security;
 
 public sealed class PermissionPolicyProvider(IOptions<AuthorizationOptions> options) : IAuthorizationPolicyProvider
 {
-    private const string PermissionPrefix = "Permission:";
+    public const string PermissionPrefix = "Permission:";
     private readonly DefaultAuthorizationPolicyProvider _fallback = new(options);
 
     public Task<AuthorizationPolicy?> GetPolicyAsync(string policyName)
     {
         if (policyName.StartsWith(PermissionPrefix, StringComparison.OrdinalIgnoreCase))
         {
-            var permission = policyName[PermissionPrefix.Length..];
+            var remainder = policyName[PermissionPrefix.Length..];
+            var (permission, minScope) = Parse(remainder);
             var policy = new AuthorizationPolicyBuilder()
-                .AddRequirements(new PermissionRequirement(permission))
+                .AddRequirements(new PermissionRequirement(permission, minScope))
                 .Build();
             return Task.FromResult<AuthorizationPolicy?>(policy);
         }
@@ -25,4 +27,17 @@ public sealed class PermissionPolicyProvider(IOptions<AuthorizationOptions> opti
     public Task<AuthorizationPolicy> GetDefaultPolicyAsync() => _fallback.GetDefaultPolicyAsync();
 
     public Task<AuthorizationPolicy?> GetFallbackPolicyAsync() => _fallback.GetFallbackPolicyAsync();
+
+    private static (string Permission, PermissionScope MinScope) Parse(string remainder)
+    {
+        var separator = remainder.LastIndexOf(':');
+        if (separator > 0
+            && int.TryParse(remainder[(separator + 1)..], out var scopeValue)
+            && scopeValue is >= (int)PermissionScope.Own and <= (int)PermissionScope.Global)
+        {
+            return (remainder[..separator], (PermissionScope)scopeValue);
+        }
+
+        return (remainder, PermissionScope.Organization);
+    }
 }

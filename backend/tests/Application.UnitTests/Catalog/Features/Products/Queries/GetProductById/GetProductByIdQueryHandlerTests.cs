@@ -21,7 +21,9 @@ public sealed class GetProductByIdQueryHandlerTests
             productId,
             Domain.Catalog.ValueObjects.Sku.Create("SKU-200").Value,
             Domain.Catalog.ValueObjects.Money.Create(25m, "EUR").Value,
-            categoryId).Value;
+            categoryId,
+            FakeTenantContext.DefaultOrganizationId,
+            FakeTenantContext.DefaultPath).Value;
         product.SetTranslation(languageId, "Localized Name", "Localized description");
         db.Products.Add(product);
         await db.SaveChangesAsync();

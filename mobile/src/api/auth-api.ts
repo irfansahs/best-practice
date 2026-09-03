@@ -3,7 +3,11 @@ import type { ApiResponse, CurrentUserDto, LoginResponse } from '@/api/types';
 import { clearTokens, setAccessToken, setRefreshToken, getRefreshToken } from '@/services/token-store';
 
 export async function login(email: string, password: string) {
-  const { data } = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', { email, password });
+  const { data } = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', {
+    email,
+    password,
+    clientType: 'mobile',
+  });
   setAccessToken(data.data.accessToken);
   await setRefreshToken(data.data.refreshToken);
   return data.data;
@@ -23,5 +27,17 @@ export async function logout() {
 
 export async function getCurrentUser() {
   const { data } = await apiClient.get<ApiResponse<CurrentUserDto>>('/auth/me');
+  return data.data;
+}
+
+export async function switchOrganization(organizationId: string) {
+  const refresh = await getRefreshToken();
+  const { data } = await apiClient.post<ApiResponse<LoginResponse>>('/auth/switch-organization', {
+    organizationId,
+    refreshToken: refresh,
+    clientType: 'mobile',
+  });
+  setAccessToken(data.data.accessToken);
+  await setRefreshToken(data.data.refreshToken);
   return data.data;
 }

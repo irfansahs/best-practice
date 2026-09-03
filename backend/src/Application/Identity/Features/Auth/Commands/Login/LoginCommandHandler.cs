@@ -3,6 +3,7 @@ using Application.Abstractions.Messaging;
 using Application.Abstractions.Security;
 using Application.Configuration;
 using Domain.Identity;
+using Domain.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SharedKernel.Results;
@@ -13,6 +14,7 @@ public sealed class LoginCommandHandler(
     IAppDbContext db,
     IPasswordHasher passwordHasher,
     ITokenService tokenService,
+    IPermissionResolver permissionResolver,
     TimeProvider timeProvider,
     IOptions<LockoutOptions> lockoutOptions) : IRequestHandler<LoginCommand, LoginResponse>
 {
@@ -21,12 +23,15 @@ public sealed class LoginCommandHandler(
         var emailResult = Domain.Identity.ValueObjects.Email.Create(request.Email);
         if (emailResult.IsFailure) return IdentityErrors.InvalidCredentials;
 
+        var clientResult = ClientTypeParser.Parse(request.ClientType);
+        if (clientResult.IsFailure) return clientResult.Error;
+        var clientType = clientResult.Value;
+
         var now = timeProvider.GetUtcNow();
         var lockout = lockoutOptions.Value;
 
         var tracked = await db.Users
-            .Include(u => u.Roles)
-            .ThenInclude(r => r.Permissions)
+            .Include(u => u.RefreshTokens)
             .FirstOrDefaultAsync(u => u.Email == emailResult.Value, cancellationToken);
 
         if (tracked is null || !tracked.IsActive) return IdentityErrors.InvalidCredentials;
@@ -38,21 +43,39 @@ public sealed class LoginCommandHandler(
                 request.IpAddress,
                 now,
                 lockout.MaxFailedAttempts,
-                TimeSpan.FromMinutes(lockout.LockoutMinutes));
+                TimeSpan.FromMinutes(lockout.LockoutMinutes),
+                request.OrganizationId,
+                clientType);
             db.LoginAttempts.Add(tracked.LoginAttempts.Last());
             return IdentityErrors.InvalidCredentials;
         }
 
-        tracked.RecordSuccessfulLogin(request.IpAddress, now);
+        var session = await AuthSessionFactory.CreateAsync(
+            db,
+            permissionResolver,
+            tracked,
+            request.OrganizationId,
+            clientType,
+            impersonating: false,
+            cancellationToken);
+
+        if (session.IsFailure)
+            return session.Error;
+
+        tracked.RecordSuccessfulLogin(request.IpAddress, now, session.Value.Organization.Id, clientType);
         db.LoginAttempts.Add(tracked.LoginAttempts.Last());
 
-        var (accessToken, accessExpiresAt) = tokenService.GenerateAccessToken(tracked);
-        var refreshToken = tokenService.GenerateRefreshToken();
-        var refreshTokenHash = tokenService.HashRefreshToken(refreshToken);
-        var refreshExpiresAt = tokenService.GetRefreshTokenExpiresAt(now);
-        tracked.IssueRefreshToken(Guid.NewGuid(), refreshTokenHash, refreshExpiresAt, now);
-        db.RefreshTokens.Add(tracked.RefreshTokens.Last());
+        var tokens = AuthTokenIssuer.Issue(
+            tokenService,
+            tracked,
+            session.Value,
+            now,
+            familyId: Guid.NewGuid(),
+            request.DeviceId,
+            request.DeviceName,
+            request.IpAddress);
 
-        return new LoginResponse(accessToken, refreshToken, accessExpiresAt);
+        db.RefreshTokens.Add(tracked.RefreshTokens.Last());
+        return tokens;
     }
 }

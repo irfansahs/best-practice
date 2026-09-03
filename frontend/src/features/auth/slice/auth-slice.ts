@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '@/app/store';
-import type { CurrentUser } from '@/shared/api/api-types';
+import { PermissionScope, type CurrentUser } from '@/shared/api/api-types';
 import { setAccessToken, getAccessToken } from '@/shared/api/axios-base-query';
 import { authApi } from '@/features/auth/api/auth-api';
 import { baseApi } from '@/shared/api/base-api';
@@ -21,6 +21,10 @@ const initialState: AuthState = {
   expiresAt: null,
   error: null,
 };
+
+function permissionMap(user: CurrentUser | null): Record<string, number> {
+  return user?.permissions ?? {};
+}
 
 export const bootstrapAuth = createAsyncThunk('auth/bootstrap', async (_, { dispatch, rejectWithValue }) => {
   const existingToken = getAccessToken();
@@ -57,6 +61,25 @@ export const login = createAsyncThunk(
       };
     } catch {
       return rejectWithValue('Auth.Login.Error');
+    }
+  },
+);
+
+export const switchOrganization = createAsyncThunk(
+  'auth/switchOrganization',
+  async (organizationId: string, { dispatch, rejectWithValue }) => {
+    try {
+      const result = await dispatch(authApi.endpoints.switchOrganization.initiate({ organizationId })).unwrap();
+      setAccessToken(result.data.accessToken);
+      setRefreshToken(result.data.refreshToken);
+      dispatch(baseApi.util.resetApiState());
+      const meResult = await dispatch(authApi.endpoints.getCurrentUser.initiate()).unwrap();
+      return {
+        user: meResult.data,
+        expiresAt: result.data.expiresAt,
+      };
+    } catch {
+      return rejectWithValue('Auth.Switch.Error');
     }
   },
 );
@@ -117,6 +140,11 @@ const authSlice = createSlice({
         state.status = 'unauthenticated';
         state.error = (action.payload as string | undefined) ?? 'Auth.Login.Error';
       })
+      .addCase(switchOrganization.fulfilled, (state, action) => {
+        state.user = action.payload.user;
+        state.expiresAt = action.payload.expiresAt;
+        state.error = null;
+      })
       .addCase(logout.fulfilled, (state) => {
         state.status = 'unauthenticated';
         state.user = null;
@@ -137,11 +165,17 @@ export const selectAuthStatus = (state: RootState) => state.auth.status;
 export const selectCurrentUser = (state: RootState) => state.auth.user;
 export const selectAuthError = (state: RootState) => state.auth.error;
 export const selectIsAuthenticated = (state: RootState) => state.auth.status === 'authenticated';
+export const selectActiveOrganization = (state: RootState) => state.auth.user?.activeOrganization ?? null;
+export const selectOrganizations = (state: RootState) => state.auth.user?.organizations ?? [];
 
-export const selectHasPermission = (permission: string) => (state: RootState) =>
-  state.auth.user?.permissions.includes(permission) ?? false;
+export const selectHasPermission =
+  (permission: string, minScope: number = PermissionScope.Organization) =>
+  (state: RootState) =>
+    (permissionMap(state.auth.user)[permission] ?? -1) >= minScope;
 
 export const selectHasAnyPermission =
   (...permissions: string[]) =>
-  (state: RootState) =>
-    permissions.some((p) => state.auth.user?.permissions.includes(p) ?? false);
+  (state: RootState) => {
+    const map = permissionMap(state.auth.user);
+    return permissions.some((p) => (map[p] ?? -1) >= PermissionScope.Organization);
+  };

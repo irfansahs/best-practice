@@ -11,4 +11,6 @@ internal static class Schemas
     public const string Audit = "audit";
 
     public const string Log = "log";
+
+    public const string Tenancy = "tenancy";
 }

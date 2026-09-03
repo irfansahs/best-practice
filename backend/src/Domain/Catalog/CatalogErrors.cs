@@ -30,4 +30,6 @@ public static class CatalogErrors
     public static Error MoneyCurrencyRequired => Error.Validation("Catalog.Money.CurrencyRequired", string.Empty);
     public static Error MoneyCurrencyInvalid => Error.Validation("Catalog.Money.CurrencyInvalid", string.Empty);
     public static Error PriceUnchanged => Error.Validation("Catalog.Money.PriceUnchanged", string.Empty);
+
+    public static Error OrganizationRequired => Error.Validation("Catalog.Organization.Required", string.Empty);
 }

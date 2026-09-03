@@ -13,7 +13,9 @@ internal sealed class LoginAttemptConfiguration : IEntityTypeConfiguration<Login
         builder.Property(x => x.Email).HasMaxLength(LoginAttempt.MaxEmailLength).IsRequired();
         builder.Property(x => x.IpAddress).HasMaxLength(LoginAttempt.MaxIpAddressLength);
         builder.Property(x => x.AttemptedAt).IsRequired();
+        builder.Property(x => x.ClientType).HasConversion<string>().HasMaxLength(16);
         builder.HasIndex(x => x.Email);
         builder.HasIndex(x => x.AttemptedAt);
+        builder.HasIndex(x => x.OrganizationId);
     }
 }

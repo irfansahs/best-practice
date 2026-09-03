@@ -16,5 +16,15 @@ public sealed class AuditLog
 
     public string? UserId { get; set; }
 
+    public Guid? OrganizationId { get; set; }
+
+    public Guid? ActorUserId { get; set; }
+
+    public bool IsImpersonated { get; set; }
+
+    public string? ClientType { get; set; }
+
+    public string? CorrelationId { get; set; }
+
     public DateTimeOffset Timestamp { get; set; }
 }

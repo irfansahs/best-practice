@@ -1,10 +1,5 @@
 import { baseApi } from '@/shared/api/base-api';
-import type {
-  ApiResponse,
-  CurrentUser,
-  LoginResponse,
-  RefreshTokenResponse,
-} from '@/shared/api/api-types';
+import type { ApiResponse, CurrentUser, LoginResponse, RefreshTokenResponse } from '@/shared/api/api-types';
 import { getRefreshToken } from '@/features/auth/token-storage';
 
 export const authApi = baseApi.injectEndpoints({
@@ -13,7 +8,7 @@ export const authApi = baseApi.injectEndpoints({
       query: (body) => ({
         url: '/auth/login',
         method: 'POST',
-        data: body,
+        data: { ...body, clientType: 'web' },
       }),
     }),
     refresh: builder.mutation<ApiResponse<RefreshTokenResponse>, void>({
@@ -36,6 +31,17 @@ export const authApi = baseApi.injectEndpoints({
         };
       },
     }),
+    switchOrganization: builder.mutation<ApiResponse<LoginResponse>, { organizationId: string }>({
+      query: ({ organizationId }) => ({
+        url: '/auth/switch-organization',
+        method: 'POST',
+        data: {
+          organizationId,
+          refreshToken: getRefreshToken(),
+          clientType: 'web',
+        },
+      }),
+    }),
     getCurrentUser: builder.query<ApiResponse<CurrentUser>, void>({
       query: () => ({
         url: '/auth/me',
@@ -45,4 +51,10 @@ export const authApi = baseApi.injectEndpoints({
   }),
 });
 
-export const { useLoginMutation, useRefreshMutation, useLogoutMutation, useGetCurrentUserQuery } = authApi;
+export const {
+  useLoginMutation,
+  useRefreshMutation,
+  useLogoutMutation,
+  useSwitchOrganizationMutation,
+  useGetCurrentUserQuery,
+} = authApi;

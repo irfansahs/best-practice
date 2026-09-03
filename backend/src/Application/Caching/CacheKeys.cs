@@ -10,4 +10,7 @@ public static class CacheKeys
     public static string TranslationResources(string culture) => $"localization:resources:{culture}";
 
     public static string HealthProbe => "health:cache-probe";
+
+    public static string PermissionSet(Guid userId, Guid organizationId) =>
+        $"identity:permissions:{userId}:{organizationId}";
 }

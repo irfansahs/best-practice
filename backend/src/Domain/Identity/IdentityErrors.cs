@@ -37,4 +37,10 @@ public static class IdentityErrors
     public static Error RefreshTokenReuseDetected => Error.Unauthorized("Identity.RefreshToken.ReuseDetected", string.Empty);
 
     public static Error InvalidCredentials => Error.Unauthorized("Identity.Login.InvalidCredentials", string.Empty);
+    public static Error ClientTypeRequired => Error.Validation("Identity.Login.ClientTypeRequired", string.Empty);
+    public static Error ClientTypeNotAllowed => Error.Forbidden("Identity.Login.ClientTypeNotAllowed", string.Empty);
+    public static Error SecurityStampMismatch => Error.Unauthorized("Identity.Token.SecurityStampMismatch", string.Empty);
+    public static Error PermissionScopeExceedsMax => Error.Validation("Identity.Permission.ScopeExceedsMax", string.Empty);
+    public static Error PlatformPermissionOnly => Error.Forbidden("Identity.Permission.PlatformOnly", string.Empty);
+    public static Error SystemRoleProtected => Error.Forbidden("Identity.Role.SystemProtected", string.Empty);
 }

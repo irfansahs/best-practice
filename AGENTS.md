@@ -108,6 +108,8 @@ Key format: `{bounded-context}:{aggregate}:{discriminator}` — example: `CacheK
 
 **Localization:** languages, resources by culture, upsert translation, import translations
 
+**Tenancy:** organizations (tree/CRUD/status), members, roles (scoped grants), permission catalog; `POST /auth/switch-organization`, `GET /auth/organizations`
+
 ## Localization Key Convention
 
 Format: `{BoundedContext}.{Entity}.{State}` or `{Layer}.{Rule}`
@@ -166,4 +168,4 @@ cd frontend && npm run build && npm run lint && npm run test
 
 ## Backlog (v1 out of scope)
 
-Outbox, Redis L2, Aspire, multi-tenancy, full-text search, OpenTelemetry SDK, Seq
+Outbox, Redis L2, Aspire, full-text search, OpenTelemetry SDK, Seq

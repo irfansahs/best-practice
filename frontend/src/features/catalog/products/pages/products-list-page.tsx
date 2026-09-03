@@ -14,7 +14,7 @@ import {
 import { useGetProductsQuery } from '@/features/catalog/products/api/products-api';
 import { ProductsFilters } from '@/features/catalog/products/components/products-filters';
 import { ProductsTable } from '@/features/catalog/products/components/products-table';
-import { PermissionGate } from '@/app/routes/permission-gate';
+import { Can } from '@/shared/components/can';
 
 export function ProductsListPage() {
   const { t } = useTranslation();
@@ -32,14 +32,14 @@ export function ProductsListPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t('Products.Title')}</h1>
-        <PermissionGate permission={Permissions.Catalog.Products.Create} fallback={null}>
+        <Can permission={Permissions.Catalog.Products.Create}>
           <Button asChild>
             <Link to="/products/new">
               <Plus className="mr-2 h-4 w-4" />
               {t('Products.New')}
             </Link>
           </Button>
-        </PermissionGate>
+        </Can>
       </div>
 
       <Card>

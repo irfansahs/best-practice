@@ -1,5 +1,6 @@
 using Application.Abstractions.Messaging;
 using Application.Abstractions.Security;
+using Domain.Identity;
 using SharedKernel.Results;
 using Error = SharedKernel.Results.Error;
 
@@ -12,8 +13,13 @@ public sealed class AuthorizationBehavior<TRequest, TResponse>(ICurrentUser curr
 
     public Task<Result<TResponse>> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
-        if (request is IAuthorizedRequest authorized && !currentUser.HasPermission(authorized.Permission))
-            return Task.FromResult<Result<TResponse>>(Forbidden);
+        if (request is IAuthorizedRequest authorized)
+        {
+            var minScope = authorized.RequiredScope;
+            if (!currentUser.HasPermission(authorized.Permission, minScope))
+                return Task.FromResult<Result<TResponse>>(Forbidden);
+        }
+
         return next();
     }
 }

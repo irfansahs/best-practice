@@ -9,6 +9,8 @@ public sealed class ProductTests
 {
     private static readonly Guid CategoryId = Guid.NewGuid();
     private static readonly Guid LanguageId = Guid.NewGuid();
+    private static readonly Guid OrganizationId = Guid.Parse("11111111-1111-1111-1111-111111111199");
+    private const string OrganizationPath = "/11111111111111111111111111111199/";
 
     [Fact]
     public void Create_WithValidInput_ReturnsProductAndRaisesEvent()
@@ -17,7 +19,7 @@ public sealed class ProductTests
         var sku = Sku.Create("SKU-001").Value;
         var price = Money.Create(19.99m, "USD").Value;
 
-        var result = Product.Create(id, sku, price, CategoryId);
+        var result = Product.Create(id, sku, price, CategoryId, OrganizationId, OrganizationPath);
 
         result.IsSuccess.ShouldBeTrue();
         result.Value.Id.ShouldBe(id);
@@ -41,7 +43,7 @@ public sealed class ProductTests
         var sku = Sku.Create("SKU-001").Value;
         var price = Money.Create(10m, "USD").Value;
 
-        var result = Product.Create(Guid.NewGuid(), sku, price, Guid.Empty);
+        var result = Product.Create(Guid.NewGuid(), sku, price, Guid.Empty, OrganizationId, OrganizationPath);
 
         result.IsFailure.ShouldBeTrue();
         result.Error.ShouldBe(CatalogErrors.CategoryIdRequired);
@@ -133,6 +135,6 @@ public sealed class ProductTests
     {
         var sku = Sku.Create("SKU-001").Value;
         var price = Money.Create(19.99m, "USD").Value;
-        return Product.Create(Guid.NewGuid(), sku, price, CategoryId).Value;
+        return Product.Create(Guid.NewGuid(), sku, price, CategoryId, OrganizationId, OrganizationPath).Value;
     }
 }

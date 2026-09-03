@@ -1,16 +1,20 @@
 import * as React from 'react';
 import { bootstrapSession, setSessionExpiredHandler } from '@/api/client';
-import { getCurrentUser, login as apiLogin, logout as apiLogout } from '@/api/auth-api';
+import { getCurrentUser, login as apiLogin, logout as apiLogout, switchOrganization as apiSwitch } from '@/api/auth-api';
 import { loadCulture } from '@/services/culture-store';
-import type { CurrentUserDto } from '@/api/types';
+import { PermissionScope, type CurrentUserDto, type OrganizationSummary } from '@/api/types';
 
 export type AuthStatus = 'bootstrapping' | 'authenticated' | 'unauthenticated';
 
 interface AuthContextValue {
   status: AuthStatus;
   user: CurrentUserDto | null;
+  permissions: Record<string, number>;
+  activeOrganization: OrganizationSummary | null;
+  hasPermission: (permission: string, minScope?: number) => boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  switchOrganization: (organizationId: string) => Promise<void>;
 }
 
 const AuthContext = React.createContext<AuthContextValue | null>(null);
@@ -59,11 +63,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setStatus('authenticated');
   }, []);
 
-  return (
-    <AuthContext.Provider value={{ status, user, login, logout }}>
-      {children}
-    </AuthContext.Provider>
+  const switchOrganization = React.useCallback(async (organizationId: string) => {
+    await apiSwitch(organizationId);
+    const me = await getCurrentUser();
+    setUser(me);
+  }, []);
+
+  const hasPermission = React.useCallback(
+    (permission: string, minScope: number = PermissionScope.Organization) =>
+      (user?.permissions[permission] ?? -1) >= minScope,
+    [user],
   );
+
+  const value = React.useMemo<AuthContextValue>(
+    () => ({
+      status,
+      user,
+      permissions: user?.permissions ?? {},
+      activeOrganization: user?.activeOrganization ?? null,
+      hasPermission,
+      login,
+      logout,
+      switchOrganization,
+    }),
+    [status, user, hasPermission, login, logout, switchOrganization],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

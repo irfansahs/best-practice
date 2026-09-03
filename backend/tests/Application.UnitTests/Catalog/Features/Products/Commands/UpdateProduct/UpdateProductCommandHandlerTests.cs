@@ -19,7 +19,9 @@ public sealed class UpdateProductCommandHandlerTests
             Guid.NewGuid(),
             Domain.Catalog.ValueObjects.Sku.Create("SKU-1").Value,
             Domain.Catalog.ValueObjects.Money.Create(10m, "USD").Value,
-            Guid.NewGuid()).Value;
+            Guid.NewGuid(),
+            FakeTenantContext.DefaultOrganizationId,
+            FakeTenantContext.DefaultPath).Value;
         product.SetTranslation(languageId, "Name", null);
         db.Products.Add(product);
         await db.SaveChangesAsync();

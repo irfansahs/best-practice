@@ -18,7 +18,7 @@ public sealed class LogoutCommandHandler(IAppDbContext db, ITokenService tokenSe
         var storedToken = await db.RefreshTokens
             .FirstOrDefaultAsync(t => t.TokenHash == refreshTokenHash, cancellationToken);
 
-        storedToken?.Revoke(now);
+        storedToken?.Revoke(now, reason: Domain.Identity.RefreshTokenRevokeReason.Logout);
 
         return Unit.Value;
     }

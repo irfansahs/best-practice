@@ -128,6 +128,14 @@ public sealed class AuthEndpointsTests(DatabaseFixture fixture) : IntegrationTes
             password = newPassword,
         });
         newLogin.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        IntegrationTestAuth.SetBearerToken(Client, (await ReadAuthPayloadAsync(newLogin)).AccessToken);
+        var restoreResponse = await Client.PostAsJsonAsync("/api/v1/auth/change-password", new
+        {
+            currentPassword = newPassword,
+            newPassword = "ChangeMe123!",
+        });
+        restoreResponse.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
     private async Task<AuthData> LoginAsync()

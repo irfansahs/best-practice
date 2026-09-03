@@ -12,9 +12,16 @@ internal sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Name).HasMaxLength(Role.MaxNameLength).IsRequired();
         builder.Property(x => x.Description).HasMaxLength(Role.MaxDescriptionLength);
+        builder.Property(x => x.OrganizationPath).HasMaxLength(450);
+        builder.Property(x => x.IsSystemRole).IsRequired();
+        builder.Property(x => x.AllowedClients).HasConversion<int>().IsRequired();
         builder.Property(x => x.CreatedAt).IsRequired();
-        builder.HasMany(x => x.Permissions).WithMany().UsingEntity(j => j.ToTable("RolePermissions", Schemas.Identity));
-        builder.Navigation(x => x.Permissions).HasField("_permissions");
-        builder.HasIndex(x => x.Name).IsUnique();
+        builder.HasMany(x => x.RolePermissions)
+            .WithOne()
+            .HasForeignKey(x => x.RoleId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Navigation(x => x.RolePermissions).HasField("_rolePermissions");
+        builder.HasIndex(x => new { x.OrganizationId, x.Name }).IsUnique();
+        builder.HasIndex(x => x.OrganizationId);
     }
 }

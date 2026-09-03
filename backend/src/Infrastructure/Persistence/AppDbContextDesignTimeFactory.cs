@@ -1,5 +1,6 @@
+using Application.Abstractions.Tenancy;
 using Infrastructure.Configuration;
-using Infrastructure.Persistence;
+using Infrastructure.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -27,6 +28,6 @@ public sealed class AppDbContextDesignTimeFactory : IDesignTimeDbContextFactory<
             sql.CommandTimeout(databaseOptions.CommandTimeout);
         });
 
-        return new AppDbContext(optionsBuilder.Options);
+        return new AppDbContext(optionsBuilder.Options, SystemTenantContext.Instance);
     }
 }

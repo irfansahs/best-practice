@@ -9,4 +9,6 @@ public static class CacheTags
     public const string I18n = "i18n";
 
     public const string Languages = "localization:languages";
+
+    public const string Permissions = "identity:permissions";
 }

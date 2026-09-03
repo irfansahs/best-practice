@@ -1,4 +1,5 @@
 using System.Reflection;
+using Domain.Identity;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Api.Endpoints;
@@ -26,6 +27,9 @@ public static class EndpointRegistrar
         return app;
     }
 
-    public static RouteHandlerBuilder RequirePermission(this RouteHandlerBuilder builder, string permission) =>
-        builder.RequireAuthorization($"Permission:{permission}");
+    public static RouteHandlerBuilder RequirePermission(
+        this RouteHandlerBuilder builder,
+        string permission,
+        PermissionScope minScope = PermissionScope.Organization) =>
+        builder.RequireAuthorization($"Permission:{permission}:{(int)minScope}");
 }

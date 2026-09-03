@@ -21,6 +21,7 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.IsActive).IsRequired();
         builder.Property(x => x.IsLockedOut).IsRequired();
         builder.Property(x => x.FailedLoginAttempts).IsRequired();
+        builder.Property(x => x.SecurityStamp).IsRequired();
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.HasQueryFilter(x => !x.IsDeleted);
         builder.HasMany(x => x.Roles).WithMany().UsingEntity(j => j.ToTable("UserRoles", Schemas.Identity));

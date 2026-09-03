@@ -15,7 +15,7 @@ public sealed class CreateCategoryCommandHandlerTests
         db.Languages.Add(Language.Create(languageId, "en", "English", "English").Value);
         await db.SaveChangesAsync();
 
-        var handler = new CreateCategoryCommandHandler(db, LanguageLookupFactory.Create(db));
+        var handler = new CreateCategoryCommandHandler(db, LanguageLookupFactory.Create(db), FakeTenantContext.Default);
         var result = await handler.Handle(
             new CreateCategoryCommand(null, languageId, "Electronics", "Devices"),
             CancellationToken.None);

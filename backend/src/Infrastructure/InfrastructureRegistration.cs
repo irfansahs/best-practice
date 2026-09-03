@@ -4,6 +4,7 @@ using Application.Abstractions.Data;
 using Application.Abstractions.Events;
 using Application.Abstractions.Localization;
 using Application.Abstractions.Security;
+using Application.Abstractions.Tenancy;
 using Application.Catalog.Abstractions;
 using Application.Configuration;
 using Infrastructure.BackgroundJobs;
@@ -18,6 +19,7 @@ using Infrastructure.Persistence;
 using Infrastructure.Persistence.Interceptors;
 using Infrastructure.Persistence.Seed;
 using Infrastructure.Security;
+using Infrastructure.Tenancy;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -46,8 +48,10 @@ public static class InfrastructureRegistration
         services.AddHttpContextAccessor();
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<ICurrentUser, CurrentUser>();
+        services.AddScoped<ITenantContext, TenantContext>();
         services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
         services.AddScoped<ITokenService, JwtTokenService>();
+        services.AddScoped<IPermissionResolver, PermissionResolver>();
         services.AddScoped<ICultureContext, CultureContext>();
         services.AddScoped<ILanguageLookup, LanguageLookup>();
         services.AddScoped<ITranslator, Translator>();
@@ -58,6 +62,7 @@ public static class InfrastructureRegistration
 
         services.AddScoped<AuditableInterceptor>();
         services.AddScoped<SoftDeleteInterceptor>();
+        services.AddScoped<TenantScopeInterceptor>();
         services.AddScoped<DomainEventInterceptor>();
         services.AddScoped<AuditLogInterceptor>();
         services.AddScoped<SlowQueryInterceptor>();
@@ -115,6 +120,7 @@ public static class InfrastructureRegistration
         services.AddHostedService<LogRetentionService>();
 
         services.AddScoped<LanguageSeeder>();
+        services.AddScoped<OrganizationSeeder>();
         services.AddScoped<TranslationSeeder>();
         services.AddScoped<PermissionSeeder>();
         services.AddScoped<CatalogSeeder>();
@@ -129,13 +135,16 @@ public static class InfrastructureRegistration
     public static async Task SeedDatabaseAsync(this IServiceProvider services, CancellationToken cancellationToken = default)
     {
         using var scope = services.CreateScope();
+        using var tenant = TenantContext.UseSystem();
         var languageSeeder = scope.ServiceProvider.GetRequiredService<LanguageSeeder>();
+        var organizationSeeder = scope.ServiceProvider.GetRequiredService<OrganizationSeeder>();
         var translationSeeder = scope.ServiceProvider.GetRequiredService<TranslationSeeder>();
         var permissionSeeder = scope.ServiceProvider.GetRequiredService<PermissionSeeder>();
         var catalogSeeder = scope.ServiceProvider.GetRequiredService<CatalogSeeder>();
         var identitySeeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
 
         await languageSeeder.SeedAsync(scope.ServiceProvider.GetRequiredService<AppDbContext>(), cancellationToken);
+        await organizationSeeder.SeedAsync(scope.ServiceProvider.GetRequiredService<AppDbContext>(), cancellationToken);
         await permissionSeeder.SeedAsync(scope.ServiceProvider.GetRequiredService<AppDbContext>(), cancellationToken);
         await translationSeeder.SeedAsync(scope.ServiceProvider.GetRequiredService<AppDbContext>(), cancellationToken);
         await catalogSeeder.SeedAsync(scope.ServiceProvider.GetRequiredService<AppDbContext>(), cancellationToken);
@@ -159,6 +168,7 @@ public static class InfrastructureRegistration
         options.AddInterceptors(
             sp.GetRequiredService<AuditableInterceptor>(),
             sp.GetRequiredService<SoftDeleteInterceptor>(),
+            sp.GetRequiredService<TenantScopeInterceptor>(),
             sp.GetRequiredService<DomainEventInterceptor>(),
             sp.GetRequiredService<AuditLogInterceptor>(),
             sp.GetRequiredService<SlowQueryInterceptor>());

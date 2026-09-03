@@ -8,7 +8,11 @@ using SharedKernel.Results;
 
 namespace Application.Identity.Features.Auth.Commands.ChangePassword;
 
-public sealed class ChangePasswordCommandHandler(IAppDbContext db, ICurrentUser currentUser, IPasswordHasher passwordHasher) : IRequestHandler<ChangePasswordCommand, Unit>
+public sealed class ChangePasswordCommandHandler(
+    IAppDbContext db,
+    ICurrentUser currentUser,
+    IPasswordHasher passwordHasher,
+    TimeProvider timeProvider) : IRequestHandler<ChangePasswordCommand, Unit>
 {
     public async Task<Result<Unit>> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
     {
@@ -26,6 +30,7 @@ public sealed class ChangePasswordCommandHandler(IAppDbContext db, ICurrentUser 
         var changeResult = user.ChangePassword(hashResult.Value);
         if (changeResult.IsFailure) return changeResult.Error;
 
+        user.RevokeAllRefreshTokens(timeProvider.GetUtcNow(), RefreshTokenRevokeReason.SecurityStampChanged);
         return Unit.Value;
     }
 }

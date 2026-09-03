@@ -16,6 +16,7 @@ public sealed class User : AggregateRoot, IAggregateRoot, IAuditableEntity, ISof
     public Email Email { get; private set; } = null!;
     public PasswordHash PasswordHash { get; private set; } = null!;
     public FullName FullName { get; private set; } = null!;
+    public Guid SecurityStamp { get; private set; }
     public bool IsActive { get; private set; }
     public bool IsLockedOut { get; private set; }
     public DateTimeOffset? LockoutEnd { get; private set; }
@@ -40,6 +41,7 @@ public sealed class User : AggregateRoot, IAggregateRoot, IAuditableEntity, ISof
         Email = email;
         PasswordHash = passwordHash;
         FullName = fullName;
+        SecurityStamp = Guid.NewGuid();
         IsActive = true;
         CreatedAt = DateTimeOffset.UtcNow;
     }
@@ -54,6 +56,7 @@ public sealed class User : AggregateRoot, IAggregateRoot, IAuditableEntity, ISof
     public Result ChangePassword(PasswordHash newPasswordHash)
     {
         PasswordHash = newPasswordHash;
+        RotateSecurityStamp();
         UpdatedAt = DateTimeOffset.UtcNow;
         return Result.Success();
     }
@@ -74,21 +77,27 @@ public sealed class User : AggregateRoot, IAggregateRoot, IAuditableEntity, ISof
         return Result.Success();
     }
 
-    public Result RecordSuccessfulLogin(string? ipAddress, DateTimeOffset attemptedAt)
+    public Result RecordSuccessfulLogin(string? ipAddress, DateTimeOffset attemptedAt, Guid? organizationId = null, ClientType? clientType = null)
     {
         FailedLoginAttempts = 0;
         IsLockedOut = false;
         LockoutEnd = null;
         LastLoginAt = attemptedAt;
-        _loginAttempts.Add(LoginAttempt.CreateSuccess(Id, Email.Value, ipAddress, attemptedAt));
+        _loginAttempts.Add(LoginAttempt.CreateSuccess(Id, Email.Value, ipAddress, attemptedAt, organizationId, clientType));
         UpdatedAt = attemptedAt;
         return Result.Success();
     }
 
-    public Result RecordFailedLogin(string? ipAddress, DateTimeOffset attemptedAt, int maxFailedAttempts, TimeSpan lockoutDuration)
+    public Result RecordFailedLogin(
+        string? ipAddress,
+        DateTimeOffset attemptedAt,
+        int maxFailedAttempts,
+        TimeSpan lockoutDuration,
+        Guid? organizationId = null,
+        ClientType? clientType = null)
     {
         FailedLoginAttempts++;
-        _loginAttempts.Add(LoginAttempt.CreateFailure(Id, Email.Value, ipAddress, attemptedAt));
+        _loginAttempts.Add(LoginAttempt.CreateFailure(Id, Email.Value, ipAddress, attemptedAt, organizationId, clientType));
 
         if (FailedLoginAttempts < maxFailedAttempts)
         {
@@ -133,21 +142,80 @@ public sealed class User : AggregateRoot, IAggregateRoot, IAuditableEntity, ISof
         return Result.Success();
     }
 
-    public RefreshToken IssueRefreshToken(Guid tokenId, string tokenHash, DateTimeOffset expiresAt, DateTimeOffset createdAt)
+    public RefreshToken IssueRefreshToken(
+        Guid tokenId,
+        string tokenHash,
+        DateTimeOffset expiresAt,
+        DateTimeOffset createdAt,
+        Guid organizationId,
+        Guid familyId,
+        ClientType clientType,
+        bool isImpersonating = false,
+        string? deviceId = null,
+        string? deviceName = null,
+        string? createdByIp = null)
     {
-        var token = RefreshToken.Create(tokenId, Id, tokenHash, expiresAt, createdAt);
+        var token = RefreshToken.Create(
+            tokenId,
+            Id,
+            tokenHash,
+            expiresAt,
+            createdAt,
+            organizationId,
+            familyId,
+            clientType,
+            isImpersonating,
+            deviceId,
+            deviceName,
+            createdByIp);
         _refreshTokens.Add(token);
         UpdatedAt = createdAt;
         return token;
     }
 
-    public Result RevokeRefreshToken(Guid tokenId, DateTimeOffset revokedAt, Guid? replacedByTokenId = null)
+    public Result RevokeRefreshToken(
+        Guid tokenId,
+        DateTimeOffset revokedAt,
+        Guid? replacedByTokenId = null,
+        RefreshTokenRevokeReason reason = RefreshTokenRevokeReason.Rotated)
     {
         var token = _refreshTokens.FirstOrDefault(t => t.Id == tokenId);
         if (token is null) return IdentityErrors.RefreshTokenNotFound;
-        token.Revoke(revokedAt, replacedByTokenId);
+        token.Revoke(revokedAt, replacedByTokenId, reason);
         UpdatedAt = revokedAt;
         return Result.Success();
+    }
+
+    public int RevokeRefreshTokenFamily(Guid familyId, DateTimeOffset revokedAt, RefreshTokenRevokeReason reason)
+    {
+        var count = 0;
+        foreach (var token in _refreshTokens.Where(t => t.FamilyId == familyId && !t.IsRevoked))
+        {
+            token.Revoke(revokedAt, reason: reason);
+            count++;
+        }
+
+        UpdatedAt = revokedAt;
+        return count;
+    }
+
+    public int RevokeAllRefreshTokens(DateTimeOffset revokedAt, RefreshTokenRevokeReason reason)
+    {
+        var count = 0;
+        foreach (var token in _refreshTokens.Where(t => !t.IsRevoked))
+        {
+            token.Revoke(revokedAt, reason: reason);
+            count++;
+        }
+
+        UpdatedAt = revokedAt;
+        return count;
+    }
+
+    public void RotateSecurityStamp()
+    {
+        SecurityStamp = Guid.NewGuid();
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 
     public void SoftDelete(DateTimeOffset deletedAt, string? deletedBy = null)
@@ -157,5 +225,6 @@ public sealed class User : AggregateRoot, IAggregateRoot, IAuditableEntity, ISof
         DeletedBy = deletedBy;
         IsActive = false;
         UpdatedAt = deletedAt;
+        RotateSecurityStamp();
     }
 }

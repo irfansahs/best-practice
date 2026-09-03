@@ -7,7 +7,7 @@ using SharedKernel.Results;
 
 namespace Domain.Catalog;
 
-public sealed class Category : AggregateRoot, IAggregateRoot, IAuditableEntity, ISoftDeletable
+public sealed class Category : AggregateRoot, IAggregateRoot, IAuditableEntity, ISoftDeletable, ITenantScoped
 {
     public const int MaxTranslationNameLength = 200;
     public const int MaxTranslationDescriptionLength = 2000;
@@ -15,6 +15,8 @@ public sealed class Category : AggregateRoot, IAggregateRoot, IAuditableEntity, 
     private readonly List<CategoryTranslation> _translations = [];
 
     public Guid? ParentCategoryId { get; private set; }
+    public Guid OrganizationId { get; private set; }
+    public string OrganizationPath { get; private set; } = null!;
     public bool IsActive { get; private set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }
@@ -28,16 +30,27 @@ public sealed class Category : AggregateRoot, IAggregateRoot, IAuditableEntity, 
 
     private Category() { }
 
-    private Category(Guid id, Guid? parentCategoryId) : base(id)
+    private Category(Guid id, Guid? parentCategoryId, Guid organizationId, string organizationPath) : base(id)
     {
         ParentCategoryId = parentCategoryId;
+        OrganizationId = organizationId;
+        OrganizationPath = organizationPath;
         IsActive = true;
     }
 
-    public static Result<Category> Create(Guid id, Guid? parentCategoryId = null)
+    public static Result<Category> Create(Guid id, Guid organizationId, string organizationPath, Guid? parentCategoryId = null)
     {
         if (parentCategoryId == Guid.Empty) return CatalogErrors.CategoryParentInvalid;
-        return new Category(id, parentCategoryId);
+        if (organizationId == Guid.Empty || string.IsNullOrWhiteSpace(organizationPath))
+            return CatalogErrors.OrganizationRequired;
+        return new Category(id, parentCategoryId, organizationId, organizationPath);
+    }
+
+    public void AssignTenant(Guid organizationId, string organizationPath)
+    {
+        if (OrganizationId != Guid.Empty) return;
+        OrganizationId = organizationId;
+        OrganizationPath = organizationPath;
     }
 
     public Result SetTranslation(Guid languageId, string? name, string? description, Slug? slug = null)
