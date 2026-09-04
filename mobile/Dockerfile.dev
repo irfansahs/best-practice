@@ -6,7 +6,10 @@ RUN npm ci
 
 COPY . .
 
+ENV CI=1
+ENV EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0
 EXPOSE 8081
 
-# Bind-mounted source + named node_modules volume: ensure deps on each start.
-CMD ["sh", "-c", "npm ci && npx expo start --web --port 8081 --host lan"]
+# Named node_modules volume is seeded from the image on first start (same as frontend-dev).
+# Do not re-run npm ci on every boot — it hangs on Windows/OneDrive bind mounts.
+CMD ["npx", "expo", "start", "--web", "--port", "8081", "--host", "lan"]

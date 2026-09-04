@@ -92,6 +92,8 @@ services:
       - "8081:8081"
     environment:
       EXPO_PUBLIC_API_URL: http://localhost:5202/api/v1
+      CI: "1"
+      EXPO_DEVTOOLS_LISTEN_ADDRESS: "0.0.0.0"
       CHOKIDAR_USEPOLLING: "true"
       WATCHPACK_POLLING: "true"
     volumes:
